@@ -39,7 +39,7 @@ def sg2plato(sg):
     return -668.962 + 1262.45 * sg - 776.43 * sg**2 + 182.94 * sg**3
 
 def tab2txt(tab, colnames, footer, colformats=None, html=False):
-    """Format a list of table rows as text.
+    """Format a list of table rows as RST or HTML.
 
     Parameters
     ----------
@@ -52,9 +52,12 @@ def tab2txt(tab, colnames, footer, colformats=None, html=False):
     colformats : list of strings, optional
       Column formats in Python string format mini-language.
     html : bool, optional
-      True to return an HTML-formatted table.
+      `True` to return an HTML-formatted table, otherwise, return RST
+      format.
 
     """
+
+    import textwrap
 
     ncols = len(colnames)
     if colformats is None:
@@ -87,22 +90,32 @@ def tab2txt(tab, colnames, footer, colformats=None, html=False):
         """.format(thead=thead, ncols=ncols, tfoot=footer,
                    tbody='\n    '.join(rows))
     else:
+        outs += '\n'
+
         colsize = []
         for i in range(ncols):
             rows = [colnames] + formatted_tab
             cell_sizes = [len(row[i]) for row in rows]
             colsize.append(max(cell_sizes))
 
-        line = ''
-        for c in colsize:
-            line += '{{:{}}}  '.format(c)
+        line = '  '.join(['{{:{}}}'.format(c) for c in colsize])
 
-        outs += '\n'
-        for row in [colnames] + [['-' * c for c in colsize]] + formatted_tab:
+        # RST borders
+        border = line.format(*['=' * c for c in colsize]) + '\n'
+
+        # header
+        outs += border
+        outs += line.format(*colnames) + '\n'
+        outs += border
+
+        # body
+        for row in formatted_tab:
             outs += line.format(*row) + '\n'
 
-        outs += '-' * (sum(colsize) + (ncols - 1) * 2) + '\n'
-        outs += footer + '\n'
+        # close
+        outs += border
+
+        outs += '\n' + textwrap.fill(footer) + '\n'
 
     return outs
 
