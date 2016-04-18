@@ -18,10 +18,11 @@ Examples
 ========
 
 Hop schedule and total IBU estimate from 7.3% alpha Cascade pellets, 1
-ounce added at 60, 10, and 0 minutes into the boil.  Initial boil
+ounce added at 60, 10, and 0 minutes left in the boil.  Initial boil
 gravity is 1.055, final volume is 5.5 gal.
 
 >>> brew.hops.schedule(1.055, 5.5, {'Cascade': (7.3, [1, 1, 1], [60, 10, 0])})
+
 =======  =====  ======  ====  ===========  ==========
 Hop      Alpha  Weight  Time  Utilization  Bitterness
 =======  =====  ======  ====  ===========  ==========
