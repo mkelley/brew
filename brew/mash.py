@@ -203,7 +203,7 @@ def infusion_volume(volume, weight, T, T_target, T_water=200.):
     """
     return (T_target - T) * (.2 * weight + volume) / (T_water - T)
 
-def schedule(r, weight, T_grain, T_mash, T_grain=65, T_water=200,
+def schedule(r, weight, T_mash, T_grain=65, T_water=200,
              mlt_gap=0.5, t_boil=60, r_boil=1.3):
     """Water temperature and volume schedule for mashing.
 
