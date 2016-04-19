@@ -77,7 +77,11 @@ def final_gravity(sg, T_mash, yeast):
     return sg - (sg - 1) * a / 100, a
 
 def find_yeast(yeast):
-    """Find yeast data by name or product key."""
+    """Find yeast data by name or product key.
+
+    To do: reconsider error handling.
+
+    """
 
     if yeast in yeast_data:
         product = yeast
