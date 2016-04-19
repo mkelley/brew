@@ -11,3 +11,5 @@ from . import hops
 from . import fermentation
 from . import util
 
+from .brew import Brew
+

@@ -69,14 +69,8 @@ def final_gravity(sg, T_mash, yeast):
     app_atten : float
 
     """
-    try:
-        product, name, atten = find_yeast(yeast)
-    except:
-        print("Yeast not found.  Valid values:")
-        for k, v in _yeast.items():
-            print('"{}" / "{}"'.format(k, v[0]))
-        raise
 
+    product, name, atten = find_yeast(yeast)
     dT = T_mash - 152
     a = sum(atten) / 2 - dT
 
@@ -85,17 +79,23 @@ def final_gravity(sg, T_mash, yeast):
 def find_yeast(yeast):
     """Find yeast data by name or product key."""
 
-    if yeast in _yeast:
+    if yeast in yeast_data:
         product = yeast
     else:
-        for k, v in _yeast.items():
+        for k, v in yeast_data.items():
             if yeast == v[0]:
                 product = k
                 break
         else:
-            raise KeyError(yeast)
+            try:
+                raise KeyError(yeast)
+            except:
+                print("Yeast not found.  Valid values:")
+                for k, v in sorted(yeast_data.items()):
+                    print('"{}" / "{}"'.format(k, v[0]))
+                raise
 
-    name, atten_min, atten_max = _yeast[product]
+    name, atten_min, atten_max = yeast_data[product]
     return product, name, (atten_min, atten_max)
 
 def priming_sugar(T, r, v):
