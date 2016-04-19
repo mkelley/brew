@@ -109,7 +109,7 @@ def grain_generator(grain):
 
         yield name, weight, ppg
 
-def wort(mash, kettle, volume, efficiency=0.75, html=False):
+def wort(mash, kettle, volume, efficiency=0.75, html=False, **kwargs):
     """Estimate wort gravity.
 
     Parameters
@@ -131,6 +131,11 @@ def wort(mash, kettle, volume, efficiency=0.75, html=False):
       The efficiency of the mash and lauter.
     html : bool
       True to print HTML-formatted table.
+
+    Returns
+    -------
+    sg : float
+      The wort gravity.
 
     """
 
@@ -160,6 +165,8 @@ def wort(mash, kettle, volume, efficiency=0.75, html=False):
     footer = ', '.join(footer)
 
     print(tab2txt(tab, colnames, footer, colformats=colformats, html=html))
+
+    return sg
 
 def strike_water(r, T_grain, T_target):
 
@@ -196,7 +203,8 @@ def infusion_volume(volume, weight, T, T_target, T_water=200.):
     """
     return (T_target - T) * (.2 * weight + volume) / (T_water - T)
 
-def schedule(r, weight, T_grain, T_mash, T_water=200., r_final=3.2):
+def schedule(r, weight, T_grain, T_mash, T_grain=65, T_water=200,
+             mlt_gap=0.5, t_boil=60, r_boil=1.3):
     """Water temperature and volume schedule for mashing.
 
     Parameters
@@ -205,17 +213,24 @@ def schedule(r, weight, T_grain, T_mash, T_water=200., r_final=3.2):
       Ratio of water volume to grain weight. [qt/lb]
     weight : float
       The grain weight. [lbs]
-    T_grain : float
-      The grain temperature. [F]
+    volume : float
+      Collected volume goal. [gal]
     T_mash : float or list
       The mash temperature.  May be a list of temperatures for step
       infusions. [F]
+    T_grain : float, optional
+      The grain temperature. [F]
     T_water : float, optional
       Infusion water temperature. [F]
-    r_final : float, optional
-      Final ratio of water volume to grain weight.  [qt/lb]
+    mlt_gap : float, optional
+      Leftover volume in MLT after lauter. [gal]
+    t_boil : float, optional
+      Boil time.  [min]
+    r_boil : float, optional
+      Boil off rate. [gal/hr]
 
     """
+
     if isinstance(T_mash, (tuple, list)):
         T_mash = list(T_mash)
     else:
@@ -237,7 +252,7 @@ def schedule(r, weight, T_grain, T_mash, T_water=200., r_final=3.2):
 
     print()
     print("    Total mash water: {:.1f} gal, {:.1f} qt/lb".format(
-        v_total / 4., v_total / weight))
+        v_total / 4, v_total / weight))
     print("    Sparge with {:.1f} gal of water.".format(
-        (r_final * weight - v_total) / 4.))
-
+        volume - v_total / 4 + 0.125 * weight + mlt_gap
+        + t_boil / 60 * r_boil))
