@@ -25,6 +25,7 @@ class Brew(object):
     hops : dict, optional
 
     yeast : string or tuple, optional
+      
 
     **kwargs
       Any `wort`, `hops.schedule`, or `mash.schedule` keywords.
@@ -55,7 +56,7 @@ class Brew(object):
         self.brew()
 
     def __repr__(self):
-        self.brew()
+        return self.brew()
 
     @property
     def weight(self):
@@ -84,10 +85,18 @@ class Brew(object):
 
         hops.schedule(boil_sg, self.volume, self.hops, **self.kwargs)
 
-        product, name, atten = fermentation.find_yeast(self.yeast)
+        if isinstance(self.yeast, str):
+            product, name, atten = fermentation.find_yeast(self.yeast)
+            name = '{} / {}'.format(product, name)
+        else:
+            try:
+                name, atten = self.yeast
+            except Exception as exc:
+                raise TypeError('yeast must be a product key or name, (e.g., "WLP001" or "California Ale" or a (name, apparent attenuation) tuple.') from exc
+
         grain_sg = mash.wort(self.mash, {}, self.volume, **self.kwargs)
         fg, app_atten = fermentation.final_gravity(grain_sg, self.T_mash[0],
                                                    self.yeast)
-        print('Fermentation with {} / {}'.format(product, name))
+        print('Fermentation with {}'.format(name))
         print('Apparent attenutation: {:.0f}%'.format(app_atten))
         print('Final gravity: {:.3f}'.format(fg))
