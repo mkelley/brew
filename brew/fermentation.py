@@ -76,20 +76,20 @@ def final_gravity(sg, T_mash, yeast):
 
     return sg - (sg - 1) * a / 100, a
 
-def find_yeast(yeast):
+def find_yeast(k):
     """Find yeast data by product key.
 
     """
 
     try:
-        name, atten_min, atten_max = yeast_data[product]
+        name, atten_min, atten_max = yeast_data[k]
     except KeyError:
         print("Yeast not found.  Valid values:")
         for k, v in sorted(yeast_data.items()):
-            print('"{}" / "{}"'.format(k, v[0]))
+            print('"{}" ({})'.format(k, v[0]))
         raise
 
-    return product, name, (atten_min, atten_max)
+    return k, name, (atten_min, atten_max)
 
 def priming_sugar(T, r, v):
     """Weight of corn sugar for priming.
