@@ -77,29 +77,18 @@ def final_gravity(sg, T_mash, yeast):
     return sg - (sg - 1) * a / 100, a
 
 def find_yeast(yeast):
-    """Find yeast data by name or product key.
-
-    To do: reconsider error handling.
+    """Find yeast data by product key.
 
     """
 
-    if yeast in yeast_data:
-        product = yeast
-    else:
-        for k, v in yeast_data.items():
-            if yeast == v[0]:
-                product = k
-                break
-        else:
-            try:
-                raise KeyError(yeast)
-            except:
-                print("Yeast not found.  Valid values:")
-                for k, v in sorted(yeast_data.items()):
-                    print('"{}" / "{}"'.format(k, v[0]))
-                raise
+    try:
+        name, atten_min, atten_max = yeast_data[product]
+    except KeyError:
+        print("Yeast not found.  Valid values:")
+        for k, v in sorted(yeast_data.items()):
+            print('"{}" / "{}"'.format(k, v[0]))
+        raise
 
-    name, atten_min, atten_max = yeast_data[product]
     return product, name, (atten_min, atten_max)
 
 def priming_sugar(T, r, v):
