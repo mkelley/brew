@@ -69,6 +69,24 @@ class Brew(object):
 
         return w
 
+    @property
+    def yeast(self):
+        return self._yeast
+
+    @yeast.setter
+    def yeast(self, y):
+        if isinstance(y, str):
+            product, name, atten = fermentation.find_yeast(self.yeast)
+            '{} / {}'.format(product, name)
+            self._yeast = name, atten
+        elif isinstance(y, (tuple, list)):
+            assert isinstance(y[0], str)
+            assert isintance(y[1], (float, int))
+            assert isintance(y[2], (float, int))
+            self._yeast = y
+        else:
+            raise TypeError('yeast must be a product key (e.g., "WLP001") or a 3-element tuple with the name, minimum, and maximum apparent attenutations (%).')
+
     def brew(self):
         from . import mash
         from . import hops
@@ -85,18 +103,9 @@ class Brew(object):
 
         hops.schedule(boil_sg, self.volume, self.hops, **self.kwargs)
 
-        if isinstance(self.yeast, str):
-            product, name, atten = fermentation.find_yeast(self.yeast)
-            name = '{} / {}'.format(product, name)
-        else:
-            try:
-                name, atten = self.yeast
-            except Exception as exc:
-                raise TypeError('yeast must be a product key or name, (e.g., "WLP001" or "California Ale" or a (name, apparent attenuation) tuple.') from exc
-
         grain_sg = mash.wort(self.mash, {}, self.volume, **self.kwargs)
         fg, app_atten = fermentation.final_gravity(grain_sg, self.T_mash[0],
                                                    self.yeast)
-        print('Fermentation with {}'.format(name))
+        print('Fermentation with {}'.format(self.yeast[0]))
         print('Apparent attenutation: {:.0f}%'.format(app_atten))
         print('Final gravity: {:.3f}'.format(fg))
