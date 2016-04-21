@@ -49,7 +49,7 @@ class Brew(object):
 
         self.hops = hops
 
-        self.yeast = yeast
+        self._yeast = yeast
 
         self.kwargs = kwargs
         
@@ -75,6 +75,8 @@ class Brew(object):
 
     @yeast.setter
     def yeast(self, y):
+        from . import fermentation
+
         if isinstance(y, str):
             product, name, atten = fermentation.find_yeast(self.yeast)
             '{} / {}'.format(product, name)
@@ -87,25 +89,37 @@ class Brew(object):
         else:
             raise TypeError('yeast must be a product key (e.g., "WLP001") or a 3-element tuple with the name, minimum, and maximum apparent attenutations (%).')
 
-    def brew(self):
+    def brew(self, **kwargs):
         from . import mash
         from . import hops
         from . import fermentation
 
-        sg = mash.wort(self.mash, self.kettle, self.volume, **self.kwargs)
-        mash.schedule(self.r, self.weight, self.volume, self.T_mash,
-                      t_boil=self.t_boil, r_boil=self.r_boil, **self.kwargs)
+        self.kwargs.update(kwargs)
+
+        sg, tab = mash.wort(self.mash, self.kettle, self.volume, **self.kwargs)
+        outs = tab
+        v_mash, T_infusions, tab = mash.infusion(
+            self.r, self.weight, self.volume, self.T_mash,
+            t_boil=self.t_boil, r_boil=self.r_boil,
+            **self.kwargs)
+        outs += tab
 
         # Use volume half way through boil to estimate boil specific
         # gravity
         v = self.volume + self.t_boil / 60.0 * self.r_boil / 2
         boil_sg = (sg - 1) * self.volume / v + 1
 
-        hops.schedule(boil_sg, self.volume, self.hops, **self.kwargs)
+        util, bit, tab = hops.schedule(boil_sg, self.volume, self.hops,
+                                       **self.kwargs)
+        outs += tab
 
-        grain_sg = mash.wort(self.mash, {}, self.volume, **self.kwargs)
+        grain_sg = mash.wort(self.mash, {}, self.volume, **self.kwargs)[0]
         fg, app_atten = fermentation.final_gravity(grain_sg, self.T_mash[0],
                                                    self.yeast)
-        print('Fermentation with {}'.format(self.yeast[0]))
-        print('Apparent attenutation: {:.0f}%'.format(app_atten))
-        print('Final gravity: {:.3f}'.format(fg))
+        outs += '''
+Fermentation with {}
+Apparent attenutation: {:.0f}%
+Final gravity: {:.3f}
+'''.format(self.yeast[0], app_atten, fg)
+
+        return outs

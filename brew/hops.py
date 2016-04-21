@@ -87,6 +87,8 @@ def schedule(sg, volume, hops, whole=False, hop_stand=False, html=False):
       The computed utilization percentages.  [%]
     bit : list
       The computed bitterness contributions.  [IBU]
+    outs : str
+      A table of hop additions.
 
     """
 
@@ -120,4 +122,6 @@ def schedule(sg, volume, hops, whole=False, hop_stand=False, html=False):
     footer += ['Total bitterness: {:.0f} IBU'.format(sum(bit))]
     footer = ', '.join(footer)
 
-    print(tab2txt(tab, colnames, footer, colformats=colformats, html=html))
+    outs = tab2txt(tab, colnames, footer, colformats=colformats, html=html)
+
+    return util, bit, outs

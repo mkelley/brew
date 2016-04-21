@@ -164,9 +164,9 @@ def wort(mash, kettle, volume, efficiency=0.75, html=False, **kwargs):
               'Specific gravity: {:.3f}'.format(sg)]
     footer = ', '.join(footer)
 
-    print(tab2txt(tab, colnames, footer, colformats=colformats, html=html))
+    outs = tab2txt(tab, colnames, footer, colformats=colformats, html=html)
 
-    return sg
+    return sg, outs
 
 def strike_water(r, T_grain, T_target):
 
@@ -203,9 +203,9 @@ def infusion_volume(volume, weight, T, T_target, T_water=200.):
     """
     return (T_target - T) * (.2 * weight + volume) / (T_water - T)
 
-def schedule(r, weight, volume, T_mash, T_grain=65, T_water=200,
-             mlt_gap=0.5, t_boil=60, r_boil=1.3):
-    """Water temperature and volume schedule for mashing.
+def infusion(r, weight, final_volume, T_mash, T_grain=65, T_water=200,
+             mlt_gap=0.5, t_boil=60, r_boil=1.3, html=False):
+    """Water temperature and volume schedule for infusion mashing.
 
     Parameters
     ----------
@@ -213,7 +213,7 @@ def schedule(r, weight, volume, T_mash, T_grain=65, T_water=200,
       Ratio of water volume to grain weight. [qt/lb]
     weight : float
       The grain weight. [lbs]
-    volume : float
+    final_volume : float
       Collected volume goal. [gal]
     T_mash : float or list
       The mash temperature.  May be a list of temperatures for step
@@ -228,31 +228,49 @@ def schedule(r, weight, volume, T_mash, T_grain=65, T_water=200,
       Boil time.  [min]
     r_boil : float, optional
       Boil off rate. [gal/hr]
+    html : bool, optional
+      Return an HTML formatted table.
+
+    Returns
+    -------
+    v : tuple
+      Volume of each infusion.
+    T : tuple
+      Temperature of each infusion.
+    s : string
+      Table of water infusions.
 
     """
+
+    from .util import tab2txt
 
     if isinstance(T_mash, (tuple, list)):
         T_mash = list(T_mash)
     else:
         T_mash = [T_mash]
 
-    T = T_mash.pop(0)
-    Ts = strike_water(r, T_grain, T)
-    v_total = r * weight
-    print()
-    print("    [{:.0f} F] Strike water:   {:.0f} F, {:.1f} gal".format(
-        T, Ts, v_total / 4))
-
+    tab = []
+    v = []
+    T = []
     for i in range(len(T_mash)):
-        v = infusion_volume(v_total, weight, T, T_mash[i])
-        v_total += v
-        T = T_mash[i]
-        print("    [{:.0f} F] Water infusion: {:.1f} qt at {:.0f}".format(
-            T_mash[i], v, T_water))
+        if i == 0:
+            v.append(r * weight)
+            T.append(strike_water(r, T_grain, T_mash[0]))
+        else:
+            v.append(infusion_volume(sum(v), weight, T[-1], T_mash[i]))
+            T.append(T_water)
 
-    print()
-    print("    Total mash water: {:.1f} gal, {:.1f} qt/lb".format(
-        v_total / 4, v_total / weight))
-    print("    Sparge with {:.1f} gal of water.".format(
-        volume - v_total / 4 + 0.125 * weight + mlt_gap
-        + t_boil / 60 * r_boil))
+        tab.append([T_mash[i], T[i], v[i]])
+
+    v_mash = sum(v)
+    v_sparge = (final_volume - v_mash / 4 + 0.125 * weight + mlt_gap
+                + t_boil / 60 * r_boil)
+    footer = '''Total mash water: {:.1f} gal ({:.1f} qt/lb)
+Sparge with {:.1f} gal of water
+'''.format(v_mash / 4, v_mash / weight, v_sparge)
+
+    columns = ['T mash', 'T water', 'Volume']
+    colformats = ['{:.0f}', '{:.0f}', '{:.1f}']
+    outs = tab2txt(tab, columns, footer, colformats=colformats, html=html)
+
+    return v, T, outs
