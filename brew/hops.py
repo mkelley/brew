@@ -114,13 +114,12 @@ def schedule(sg, volume, hops, whole=False, hop_stand=False, html=False):
                 'Bitterness']
     colformats = ['{}', '{:.1f}', '{:.1f}', '{:.0f}', '{:.1f}', '{:.0f}']
 
-    footer = ['Boil specific gravity: {:.3f}'.format(sg),
-              'Volume: {} gal'.format(volume),
-              'Whole leaf' if whole else 'Pellets']
+    footer = '''Boil specific gravity: {:.3f}
+Volume: {} gal
+{}'''.format(sg, volume, 'Whole leaf' if whole else 'Pellets')
     if hop_stand:
-        footer += ['Hop stand']
-    footer += ['Total bitterness: {:.0f} IBU'.format(sum(bit))]
-    footer = ', '.join(footer)
+        footer += '\nHop stand'
+    footer += '\nTotal bitterness: {:.0f} IBU\n'.format(sum(bit))
 
     outs = tab2txt(tab, colnames, footer, colformats=colformats, html=html)
 
