@@ -115,7 +115,7 @@ def tab2txt(tab, colnames, footer, colformats=None, html=False):
         # close
         outs += border
 
-        outs += '\n' + textwrap.fill(footer) + '\n'
+        outs += '\n' + footer + '\n'
 
     return outs
 

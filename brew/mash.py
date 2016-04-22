@@ -159,10 +159,9 @@ def wort(mash, kettle, volume, efficiency=0.75, html=False, **kwargs):
     colformats = ['{}', '{:.3f}', '{:.0%}', '{:d}', '{:.2f}']
 
     sg = sum([row[-1] for row in tab]) / volume / 1000 + 1
-    footer = ['Volume: {:.1f} gal'.format(volume),
-              'Efficiency: {:.0%}'.format(efficiency),
-              'Specific gravity: {:.3f}'.format(sg)]
-    footer = ', '.join(footer)
+    footer = '''Volume: {:.1f} gal
+Efficiency: {:.0%}
+Specific gravity: {:.3f}'''.format(volume, efficiency, sg)
 
     outs = tab2txt(tab, colnames, footer, colformats=colformats, html=html)
 
