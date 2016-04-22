@@ -51,7 +51,35 @@ def abv(og, fg):
     abw = (oe - re) / (2.0665 - 0.010665 * oe)
     return abw * fg / 0.794
 
-def final_gravity(sg, T_mash, yeast):
+def yeast(y):
+    """Yeast name and attenuation.
+
+    First checks that `y` is a tuple of (name, attenuation) or (name,
+    (min, max attenuation)).  If not, then find yeast from the
+    internal database.
+
+    """
+
+    try:
+        if isinstance(y, (tuple, list)):
+            assert isinstance(y[0], str)
+            assert isinstance(y[1], (tuple, list, float, int))
+            if isinstance(y[1], (tuple, list)):
+                assert len(y[1]) == 2
+                assert isinstance(y[1][0], (float, int))
+                assert isinstance(y[1][1], (float, int))
+        elif isinstance(y, str):
+            product, name, atten = find_yeast(y)
+            name = '{} / {}'.format(product, name)
+            y = name, atten
+        else:
+            raise TypeError
+        return y
+    except (TypeError, AssertionError) as exc:
+        raise TypeError('yeast must be a product key (e.g., "WLP001") or a 2-element tuple: (name, attenuation in %).  attenuation may be a tuple of min, max attenuation.') from exc
+
+def final_gravity(sg, T_mash, yst):
+
     """Estimate final gravity.
     
     Parameters
@@ -60,8 +88,9 @@ def final_gravity(sg, T_mash, yeast):
       Starting gravity, without any 100% fermentables.
     T_mash : float
       Mash temperature.
-    yeast : string
-      Name of a yeast strain.
+    yst : string or tuple
+      Name of a yeast strain, (name, attenuation), or (name, (min, max
+      attenuation)).
 
     Returns
     -------
@@ -70,14 +99,17 @@ def final_gravity(sg, T_mash, yeast):
 
     """
 
-    product, name, atten = find_yeast(yeast)
+    name, atten = yeast(yst)
     dT = T_mash - 152
-    a = sum(atten) / 2 - dT
+    if isinstance(atten, (list, tuple)):
+        a = sum(atten) / 2 - dT
+    else:
+        a = atten - dT
 
     return sg - (sg - 1) * a / 100, a
 
 def find_yeast(k):
-    """Find yeast data by product key.
+    """Find yeast data by product key in internal database.
 
     """
 

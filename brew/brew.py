@@ -49,7 +49,7 @@ class Brew(object):
 
         self.hops = hops
 
-        self._yeast = yeast
+        self.yeast = yeast
 
         self.kwargs = kwargs
         
@@ -76,18 +76,7 @@ class Brew(object):
     @yeast.setter
     def yeast(self, y):
         from . import fermentation
-
-        if isinstance(y, str):
-            product, name, atten = fermentation.find_yeast(self.yeast)
-            '{} / {}'.format(product, name)
-            self._yeast = name, atten
-        elif isinstance(y, (tuple, list)):
-            assert isinstance(y[0], str)
-            assert isintance(y[1], (float, int))
-            assert isintance(y[2], (float, int))
-            self._yeast = y
-        else:
-            raise TypeError('yeast must be a product key (e.g., "WLP001") or a 3-element tuple with the name, minimum, and maximum apparent attenutations (%).')
+        self._yeast = fermentation.yeast(y)
 
     def brew(self, **kwargs):
         from . import mash
