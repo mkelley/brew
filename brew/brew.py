@@ -42,7 +42,7 @@ class Brew(object):
         self.kettle = kettle
 
         self.r = r
-        self.T_mash = T_mash
+        self.T_mash = T_mash if isinstance(T_mash, (list, tuple)) else [T_mash]
 
         self.t_boil = t_boil
         self.r_boil = r_boil
