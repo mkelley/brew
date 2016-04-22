@@ -44,39 +44,57 @@ def abv(og, fg):
 
     """
 
+    return abw(og, fg) * fg / 0.794
+
+def abw(og, fg):
+    """Alcohol by weight.
+
+    Brew by the Numbers, Hall, Zymergy, Summer 1995.
+
+    """
+
     from .util import sg2plato
 
     oe = sg2plato(og)
     re = real_extract(og, fg)
-    abw = (oe - re) / (2.0665 - 0.010665 * oe)
-    return abw * fg / 0.794
+    return (oe - re) / (2.0665 - 0.010665 * oe)
 
-def yeast(y):
-    """Yeast name and attenuation.
+def carbohydrates(og, fg):
+    """Estimated carbohydrates per 12 oz."""
+    return calories_extract(og, fg) / 3.8
 
-    First checks that `y` is a tuple of (name, attenuation) or (name,
-    (min, max attenuation)).  If not, then find yeast from the
-    internal database.
+def calories(og, fg):
+    """Calories per 12 oz."""
+    return (calories_alcohol(og, fg)
+            + calories_extract(og, fg)
+            + calories_protein(og, fg))
+
+def calories_alcohol(og, fg):
+    """Calories from alcohol per 12 oz.
+
+    Brew by the Numbers, Hall, Zymergy, Summer 1995.
 
     """
 
-    try:
-        if isinstance(y, (tuple, list)):
-            assert isinstance(y[0], str)
-            assert isinstance(y[1], (tuple, list, float, int))
-            if isinstance(y[1], (tuple, list)):
-                assert len(y[1]) == 2
-                assert isinstance(y[1][0], (float, int))
-                assert isinstance(y[1][1], (float, int))
-        elif isinstance(y, str):
-            product, name, atten = find_yeast(y)
-            name = '{} / {}'.format(product, name)
-            y = name, atten
-        else:
-            raise TypeError
-        return y
-    except (TypeError, AssertionError) as exc:
-        raise TypeError('yeast must be a product key (e.g., "WLP001") or a 2-element tuple: (name, attenuation in %).  attenuation may be a tuple of min, max attenuation.') from exc
+    return 25.2 * fg * abw(og, fg)
+
+def calories_extract(og, fg):
+    """Calories from residual sugars per 12 oz.
+
+    Brew by the Numbers, Hall, Zymergy, Summer 1995.
+
+    """
+
+    return 13.5 * fg * real_extract(og, fg)    
+
+def calories_protein(og, fg):
+    """Calories from protein per 12 oz.
+
+    Brew by the Numbers, Hall, Zymergy, Summer 1995.
+
+    """
+
+    return 0.994 * fg * real_extract(og, fg)
 
 def final_gravity(sg, T_mash, yst):
 
@@ -183,4 +201,31 @@ def real_extract(og, fg):
     ae = sg2plato(fg)
     q = 0.22 + 0.001 * oe
     return (q * oe + ae) / (1 + q)
+
+def yeast(y):
+    """Yeast name and attenuation.
+
+    First checks that `y` is a tuple of (name, attenuation) or (name,
+    (min, max attenuation)).  If not, then find yeast from the
+    internal database.
+
+    """
+
+    try:
+        if isinstance(y, (tuple, list)):
+            assert isinstance(y[0], str)
+            assert isinstance(y[1], (tuple, list, float, int))
+            if isinstance(y[1], (tuple, list)):
+                assert len(y[1]) == 2
+                assert isinstance(y[1][0], (float, int))
+                assert isinstance(y[1][1], (float, int))
+        elif isinstance(y, str):
+            product, name, atten = find_yeast(y)
+            name = '{} / {}'.format(product, name)
+            y = name, atten
+        else:
+            raise TypeError
+        return y
+    except (TypeError, AssertionError) as exc:
+        raise TypeError('yeast must be a product key (e.g., "WLP001") or a 2-element tuple: (name, attenuation in %).  attenuation may be a tuple of min, max attenuation.') from exc
 

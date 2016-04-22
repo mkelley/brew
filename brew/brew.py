@@ -105,10 +105,14 @@ class Brew(object):
         grain_sg = mash.wort(self.mash, {}, self.volume, **self.kwargs)[0]
         fg, app_atten = fermentation.final_gravity(grain_sg, self.T_mash[0],
                                                    self.yeast)
+        cal = fermentation.calories(sg, fg)
+        carbs = fermentation.carbohydrates(sg, fg)
         outs += '''
 Fermentation with {}
 Apparent attenutation: {:.0f}%
 Final gravity: {:.3f}
-'''.format(self.yeast[0], app_atten, fg)
+Calories: {:.0f}
+Carbohydrates: {:.1f} g
+'''.format(self.yeast[0], app_atten, fg, cal, carbs)
 
         return outs
