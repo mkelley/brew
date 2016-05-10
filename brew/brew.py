@@ -111,8 +111,9 @@ class Brew(object):
 Fermentation with {}
 Apparent attenutation: {:.0f}%
 Final gravity: {:.3f}
+ABV: {:.1f}%
 Calories: {:.0f}
 Carbohydrates: {:.1f} g
-'''.format(self.yeast[0], app_atten, fg, cal, carbs)
+'''.format(self.yeast[0], app_atten, fg, fermentation.abv(sg, fg), cal, carbs)
 
         return outs
