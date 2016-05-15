@@ -254,23 +254,23 @@ def infusion(r, weight, final_volume, T_mash, T_grain=65, T_water=200,
     T = []
     for i in range(len(T_mash)):
         if i == 0:
-            v.append(r * weight)
+            v.append(r * weight / 4)
             T.append(strike_water(r, T_grain, T_mash[0]))
         else:
-            v.append(infusion_volume(sum(v), weight, T[-1], T_mash[i]))
+            v.append(infusion_volume(sum(v) * 4, weight, T[-1], T_mash[i]) / 4)
             T.append(T_water)
 
         tab.append([T_mash[i], T[i], v[i]])
 
     v_mash = sum(v)
-    v_sparge = (final_volume - v_mash / 4 + 0.125 * weight + mlt_gap
+    v_sparge = (final_volume - v_mash + 0.125 * weight + mlt_gap
                 + t_boil / 60 * r_boil)
     footer = '''Total mash water: {:.1f} gal ({:.1f} qt/lb)
 Sparge with {:.1f} gal of water
-'''.format(v_mash / 4, v_mash / weight, v_sparge)
+'''.format(v_mash, v_mash * 4 / weight, v_sparge)
 
-    columns = ['T mash', 'T water', 'Volume']
-    colformats = ['{:.0f}', '{:.0f}', '{:.1f}']
+    columns = ['T mash (F)', 'T water (F)', 'Volume (gal)']
+    colformats = ['{:.0f}', '{:.0f}', '{:.2f}']
     outs = tab2txt(tab, columns, footer, colformats=colformats, html=html)
 
     return v, T, outs
