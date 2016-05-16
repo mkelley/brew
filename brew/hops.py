@@ -57,7 +57,8 @@ def hop_additions(hops):
         for i in range(n):
             yield name, alpha, _weight[i], _time[i]
 
-def schedule(sg, volume, hops, whole=False, hop_stand=False, html=False):
+def schedule(sg, volume, hops, whole=False, hop_stand=False, html=False,
+             **kwargs):
     """Compute IBUs based on a hop schedule and wort boil.
 
     Hop schedule will be sorted by time, weight, then alpha.
