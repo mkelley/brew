@@ -20,8 +20,10 @@ class Brew(object):
       efficiency.
     r : float, optional
       Ratio of water volume to grain weight. [qt/lb]
-    T_mash : float or list, optional
-      Mash temperature(s).
+    T_rest : float or list, optional
+       Initial (pre-saccharification) rest temperature(s).
+    T_sacc : float or list, optional
+      Saccharification rest temperature(s).
     hops : dict, optional
 
     yeast : string or tuple, optional
@@ -33,7 +35,7 @@ class Brew(object):
     """
 
     def __init__(self, volume=5.5, mash={'American 2-row': 10},
-                 kettle={}, r=1.4, T_mash=[150, 170], t_boil=60,
+                 kettle={}, r=1.4, T_rest=[], T_sacc=[150, 170], t_boil=60,
                  r_boil=1.3, hops={'Cascade': (7, 1.0, 60)},
                  yeast='WLP001', **kwargs):
 
@@ -42,7 +44,9 @@ class Brew(object):
         self.kettle = kettle
 
         self.r = r
-        self.T_mash = T_mash if isinstance(T_mash, (list, tuple)) else [T_mash]
+        self.T_mash = T_rest if isinstance(T_rest, (list, tuple)) else [T_rest]
+        self.T_sacc = T_sacc if isinstance(T_sacc, (list, tuple)) else [T_sacc]
+        self.T_mash.extend(self.T_sacc)
 
         self.t_boil = t_boil
         self.r_boil = r_boil
@@ -103,7 +107,7 @@ class Brew(object):
         outs += tab
 
         grain_sg = mash.wort(self.mash, {}, self.volume, **self.kwargs)[0]
-        fg, app_atten = fermentation.final_gravity(grain_sg, self.T_mash[0],
+        fg, app_atten = fermentation.final_gravity(grain_sg, self.T_sacc[0],
                                                    self.yeast)
         cal = fermentation.calories(sg, fg)
         carbs = fermentation.carbohydrates(sg, fg)

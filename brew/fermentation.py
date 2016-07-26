@@ -35,6 +35,7 @@ yeast_data = {
     'WLP655': ('Sour Mix 1', 85, 100),
     'WLP665': ('Flemish Ale Blend', 80, 100),
     'WLP670': ('American Farmhouse Blend', 75, 82),
+    'US-05': ('American Ale', 81, 81),
 }
 
 def abv(og, fg):
