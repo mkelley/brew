@@ -257,7 +257,8 @@ def infusion(r, weight, final_volume, T_mash, T_grain=65, T_water=200,
             v.append(r * weight / 4)
             T.append(strike_water(r, T_grain, T_mash[0]))
         else:
-            v.append(infusion_volume(sum(v) * 4, weight, T[-1], T_mash[i]) / 4)
+            v.append(infusion_volume(sum(v) * 4, weight, T_mash[i-1],
+                                     T_mash[i]) / 4)
             T.append(T_water)
 
         tab.append([T_mash[i], T[i], v[i]])
