@@ -11,6 +11,7 @@ ppg_data = {
     # Beersmith: http://www.beersmith.com/Grains/Grains/GrainList.htm
     'American 6-row': 35,
     'American 2-row': 37,
+    'American pale ale': 36,  # Beersmith
     'Belgian pale ale': 37,
     'Belgian pilsener': 37,
     'English 2-row': 38,
@@ -70,7 +71,10 @@ ppg_data = {
     'wheat, torrified': 35,
     'agave syrup': 34,
     'Belgian candi sugar': 46,
+    'Belgian candi syrup': 36,
     'cane sugar': 46,
+    'light brown sugar': 46,
+    'dark brown sugar': 46,
     'corn sugar, dextrose': 46,
     'honey': (30, 35),
     'maple sap': 9,
@@ -79,6 +83,7 @@ ppg_data = {
     'rapadura': 40,
     'rice extract': 34,
     'white sorghum syrup': 38,
+    'pumpkin puree': 2,
 }
 
 def grain_generator(grain):
@@ -91,6 +96,7 @@ def grain_generator(grain):
     """
 
     from operator import itemgetter
+    
     for name, v in sorted(grain.items(), key=itemgetter(1), reverse=True):
         if isinstance(v, (list, tuple)):
             weight, ppg = v
@@ -142,23 +148,27 @@ def wort(mash, kettle, volume, efficiency=0.75, html=False, **kwargs):
     from .util import tab2txt
 
     total_weight = 0
+    total_ex = 0
     for name, weight, ppg in grain_generator(dict(mash, **kettle)):
         total_weight += weight
+        if name in mash:
+            total_ex += weight * ppg * efficiency
+        else:
+            total_ex += weight * ppg
 
     tab = []
     for name, weight, ppg in grain_generator(mash):
         ex = weight * ppg * efficiency
-        tab.append([name, weight, weight / total_weight, ppg, ex])
+        tab.append([name, weight, weight / total_weight, ppg, ex, ex / total_ex])
 
-    for name, weight, pgg in grain_generator(kettle):
+    for name, weight, ppg in grain_generator(kettle):
         ex = weight * ppg
-        tab.append([grain, weight, weight / total_weight, ppg, ex])
+        tab.append([name, weight, weight / total_weight, ppg, ex, ex / total_ex])
 
+    colnames = ['Grain/Adjunct', 'Weight', 'Weight Fraction', 'PPG', 'Extract', 'Extract Fraction']
+    colformats = ['{}', '{:.3f}', '{:.1%}', '{:d}', '{:.1f}', '{:.1%}']
 
-    colnames = ['Grain/Adjunct', 'Weight', 'Grist Fraction', 'PPG', 'Extract']
-    colformats = ['{}', '{:.3f}', '{:.0%}', '{:d}', '{:.2f}']
-
-    sg = sum([row[-1] for row in tab]) / volume / 1000 + 1
+    sg = sum([row[-2] for row in tab]) / volume / 1000 + 1
     footer = '''Volume: {:.1f} gal
 Efficiency: {:.0%}
 Specific gravity: {:.3f}
