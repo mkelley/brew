@@ -54,6 +54,7 @@ gravity is 1.055, final volume is 5.5 gal.
   Total bitterness: 30 IBU
 
 Brew a saison.
+
 >>> brew.Brew(mash={'German pilsner': 8.5, 'American rye malt': 1.5, 'wheat, flaked': 1}, hops={'Belma': (10.8, 0.7, 60), 'French Strisselspalt': (1.2, 1.0, 10)}, yeast='WLP566', T_sacc=[146, 170])
 
   =================  ======  ===============  ===  =======  ================
