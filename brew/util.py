@@ -76,7 +76,7 @@ def tab2txt(tab, colnames, footer, colformats=None, html=False):
                 for row in formatted_tab]
 
         outs = """
-<table class="table table-condensed table-hover">
+<table class="table table-condensed table-hover small">
   <thead>
     {thead}
   </thead>
