@@ -11,6 +11,7 @@ yeast_data = {
     'WLP001': ('California Ale', 73, 80),
     'WLP002': ('English Ale', 63, 70),
     'WLP004': ('Irish Ale', 69, 74),
+    'WLP007': ('Dry English Ale', 70, 80),
     'WLP051': ('California Ale V', 70, 75),
     'WLP072': ('French Ale', 68, 75),
     'WLP080': ('Cream Ale Blend', 75, 80),
@@ -142,8 +143,8 @@ def find_yeast(k):
 
     return k, name, (atten_min, atten_max)
 
-def priming_sugar(T, r, v):
-    """Weight of corn sugar for priming.
+def priming_sugar(T, r, v, fermentable='table sugar'):
+    """Weight of sugar for priming.
 
     Parameters
     ----------
@@ -154,6 +155,9 @@ def priming_sugar(T, r, v):
       dissolved CO2).
     v : float
       Volume of beer, gallons.
+    fermentable : string
+      Type of fermentable: corn sugar, table sugar, dry malt extract,
+      or honey.
 
       American ales: 2.2 to 3.0
        British ales: 1.5 to 2.2
@@ -167,14 +171,21 @@ def priming_sugar(T, r, v):
 
     For other sugars:
       Dry malt extract = 1.54 * corn
-      Table sugar = 0.905 * corn
+      Table sugar = 0.95 * corn
       Honey = 1.11 * corn
 
     Brad Smith, BYO May-Jun 2015 (vol 21, no 3)
 
     """
-
-    return (0.5360 * v) *  ((r - 3.0378) + (0.050 * T) - (0.0002655 * T**2))
+    scales = {
+        'corn sugar': 1.0,
+        'table sugar': 0.95,
+        'dry malt extract': 1.54,
+        'honey': 1.11
+    }
+    assert fermentable in scales
+    scale = scales[fermentable]
+    return scale * (0.5360 * v) *  ((r - 3.0378) + (0.050 * T) - (0.0002655 * T**2))
 
 def real_attenuation(og, fg):
     """Real attenuation (%) from original and final gravity.

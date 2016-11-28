@@ -15,6 +15,7 @@ ppg_data = {
     'Belgian pale ale': 37,
     'Belgian pilsener': 37,
     'English 2-row': 38,
+    'English mild': 37,  # Beersmith
     'Maris Otter': 38,
     'wheat malt': 38,  # midwest / german / belgian
     'American rye malt': 36,
@@ -37,7 +38,9 @@ ppg_data = {
     'American caramel 40': 35,
     'American caramel 60': 34,
     'American caramel 120': 33,
+#    'Thomas Fawcett crystal II': 34,   # guess
     'English crystal 20-30': 36,
+    'English crystal 60-70': 34,
     'English Caramalt': 36,
     'Belgian crystal': 36,
     'American victory': 33,
