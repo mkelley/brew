@@ -6,6 +6,85 @@ mash --- Wort and mash.
 
 """
 
+from enum import Enum
+
+class PPG(Enum):
+    American_6_row = "American 6-row", 35
+    American_2_row = "American 2-row", 37
+    American_pale_ale = "American pale ale", 36
+    Belgian_pale_ale = "Belgian pale ale", 37
+    Belgian_pilsener = "Belgian pilsener", 37
+    English_2_row = "English 2-row", 38
+    English_mild = "English mild", 37
+    Maris_Otter = "Maris Otter", 38
+    wheat_malt = "Wheat malt",  38  # midwest / german / belgian
+    American_rye_malt = "American rye malt", 36
+    German_rye_malt = "German rye malt", 38
+    German_pilsner = "German pilsner", 37
+    English_rye_malt = "English rye malt", 40
+    English_oat_malt = "English oat malt", 35
+    American_Vienna = "American Vienna", 36
+    German_Vienna = "German Vienna", 37
+    American_Carapils = "American Carapils", 34  # dextrine
+    Belgian_Carapils = "Belgian Carapils", 36
+    American_Munich = "American Munich", 34
+    German_Munich = "German Munich", 37
+    German_Munich_II = "Germain Munich II", 36
+    Belgian_Munich = "Belgian Munich", 37
+    Caramunich = "Caramunich", 33  # Beersmith
+    American_caramel_10 = "American caramel 10", 35
+    American_caramel_20 = "American caramel 20", 35
+    American_caramel_40 = "American caramel 40", 35
+    American_caramel_60 = "American caramel 60", 34
+    American_caramel_120 = "American caramel 120", 33
+    English_crystal_20_30 = "English crystal 20-30", 36
+    English_crystal_60_70 = "English crystal 60-70", 34
+    English_Caramalt = "English Caramalt", 36
+    Belgian_crystal = "Belgian crystal", 36
+    American_Victory = "American Victory", 33
+    Belgian_biscuit = "Belgian biscuit", 36
+    Belgian_aromatic = "Belgian aromatic", 36
+    English_brown = "English brown", 33
+    English_amber = "English amber", 33
+    Belgian_Special_B = "Belgian Special B", 35
+    American_chocolate = "American chocolate", 28  # Beersmith
+    English_pale_chocolate = "English pale chocolate", 34  # Beersmith
+    English_chocolate = "English chocolate", 34  # Beersmith
+    Carahell = "Carahell", 35  # guess
+    black = "Black", 25  # Beersmith
+    roasted_barley = "Roasted barley", 18
+    barley_raw = "Barley, raw", 32  # 30 to 34
+    barley_flaked = "Barley, flaked", 32  # 30 to 34
+    corn_flaked = "Corn, flaked", 39
+    corn_grits = "Corn grits", 37
+    millet_raw = "Millet, raw", 37
+    sorghum_raw = "Sorghum, raw", 37
+    oats_raw = "Oats, raw", 33
+    oats_flaked = "Oats, flaked", 33
+    rice_raw = "Rice, raw", 38
+    rice_flaked = "Rice, flaked", 38
+    rye_raw = "Rye, raw", 36
+    rye_flaked = "Rye, flaked", 36
+    wheat_flaked = "Wheat, flaked", 33
+    wheat_raw = "Wheat, raw", 37
+    wheat_torrified = "Wheat, torrified", 35
+    agave_syrup = "Agave syrup", 34
+    Belgian_candi_sugar = "Belgian candi sugar", 46
+    Belgian_candi_syrup = "Belgian candi syrup", 36
+    cane_sugar = "Cane sugar", 46
+    light_brown_sugar = "Light brown sugar", 46
+    dark_brown_sugar = "Dark brown sugar", 46
+    corn_sugar_dextrose = "Corn sugar (dextrose)", 46
+    honey = "Honey", 32  # 30 to 35
+    maple_sap = "Maple sap", 9
+    maple_syrup = "Maple syrup", 30  # variable
+    molasses = "Molasses", 36
+    rapadura = "Rapadura", 40
+    rice_extract = "Rice extract", 34
+    white_sorghum_syrup = "White sorghum syrup", 38
+    pumpkin_puree = "Pumpkin puree", 2
+
+
 ppg_data = {
     # Source: Home Brewer's Companion
     # Beersmith: http://www.beersmith.com/Grains/Grains/GrainList.htm

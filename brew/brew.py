@@ -6,6 +6,230 @@ brew --- Homebrew recipe calculator.
 
 """
 
+import collections
+from enum import Enum
+
+class Timing(Enum):
+    mash = 1
+    vorlauf = 2
+    first_wort = 3
+    boil = 4
+    whirlpool = 5
+    primary = 6
+    secondary = 7
+    other = 8
+    final = 9
+
+class Fermentable(object):
+    """Grains and adjuncts.
+
+    Parameters
+    ----------
+    ppg : mash.PPG or float
+      The item being fermented, or the number of gravity points added
+      per pound per gallon (requires `name`).
+    weight : float
+      The weight in pounds.
+    timing : Timing, optional
+      The timing of the addition.
+    name : string, optional
+      Use this name instead of the name in the `PPG` object.  Required
+      if `pgg` is a float.
+
+    Notes
+    -----
+    Use `Timing.other` and the `Fermentable` will not contribute to
+    the specific gravity.
+
+    """
+
+    def __init__(self, ppg, weight, timing=Timing.mash, name=None):
+        from . import mash
+
+        assert isinstance(ppg, (mash.PPG, float, int))
+        assert isinstance(weight, (float, int))
+        assert isinstance(timing, Timing)
+        if name is not None:
+            assert isinstance(name, str)
+
+        if isinstance(ppg, mash.PPG):
+            self.name, self.ppg = ppg.value
+            if name is not None:
+                self.name = name
+        else:
+            ppg = float(ppg)
+            assert name is not None, '`name` is required when `ppg` is a float.'
+            self.name = name
+
+        self.weight = float(weight)
+        self.timing = timing
+
+    def __repr__(self):
+        return "<Fermentable: {}>".format(str(self))
+
+    def __str__(self):
+        return "{}, {:.2f} lbs".format(self.name, self.ppg, self.weight)
+        
+    def extract(self, mash_efficiency):
+        """Amount of extract per gallon."""
+        ex = self.weight * self.ppg
+        if self.timing in (Timing.mash, Timing.vorlauf):
+            ex *= mash_efficiency
+        return ex
+
+class Wort(collections.abc.MutableSequence):
+    """Make some wort."""
+    def __init__(self, a=None):
+        self._list = []
+        if a is not None:
+            for v in a:
+                self.append(v)
+
+    def __contains__(self, value):
+        return value in self._list
+        
+    def __delitem__(self, k):
+        del self._list[k]
+
+    def __iadd__(self, *args, **kwargs):
+        self._list.__iadd__(*args, **kwargs)
+        
+    def __iter__(self):
+        return iter(self._list)
+        
+    def __getitem__(self, k):
+        return self._list[k]
+        
+    def __len__(self, *args, **kwargs):
+        return len(self._list)
+
+    def __repr__(self):
+        s = "Wort:\n  "
+        s += "\n  ".join([str(f) for f in self])
+        return s
+    
+    def __reversed__(self, *args, **kwargs):
+        return reversed(self._list)
+        
+    def __setitem__(self, index, value):
+        assert isinstance(value, Fermentable)
+        collections.abc.MutableSequence.__setitem__(self, index, value)
+
+    def append(self, v):
+        self._list.append(v)
+
+    def extend(self, iterable):
+        self._list.extend(iterable)
+        
+    def count(self, *args):
+        return self._list.count(*args)
+        
+    def index(self, *args):
+        return self._list(*args)
+
+    def insert(self, index, object):
+        self._list.insert(index, object)
+
+    def pop(self, *args):
+        return self._list.pop(*args)
+        
+    def remove(self, v):
+        self._list.remove(v)
+
+    def reverse(self):
+        self._list.reverse()
+
+    @property
+    def mash(self):
+        return list(filter(lambda v: v.timing.value == Timing.mash.value, self))
+        
+    @property
+    def vorlauf(self):
+        return list(filter(lambda v: v.timing.value == Timing.vorlauf.value, self))
+        
+    @property
+    def first_wort(self):
+        return list(filter(lambda v: v.timing.value == Timing.first_wort.value, self))
+        
+    @property
+    def boil(self):
+        return list(filter(lambda v: v.timing.value == Timing.boil.value, self))
+    
+    @property
+    def whirlpool(self):
+        return list(filter(lambda v: v.timing.value == Timing.whirlpool.value, self))
+
+    @property
+    def primary(self):
+        return list(filter(lambda v: v.timing.value == Timing.primary.value, self))
+        
+    @property
+    def secondary(self):
+        return list(filter(lambda v: v.timing.value == Timing.secondary.value, self))
+        
+    @property
+    def other(self):
+        return list(filter(lambda v: v.timing.value == Timing.other.value, self))
+
+    @property
+    def fermentables(self):
+        return list(filter(lambda v: isinstance(v, Fermentable), self))
+    
+    def gravity(self, volume, efficiency, time=Timing.final,
+                verbose=True, **kwargs):
+        """Estimate specific gravity.
+
+        Parameters
+        ----------
+        volume : float
+          The volume of the wort, either collected from the mash or
+          post-boil.
+        efficiency : float
+          The efficiency of the mash and lauter, from 0 to 1.0.
+        time : Timing
+          The epoch at which the gravity should be estimated.  This
+          parameter determines which `Fermantable`s are included.
+        verbose : bool, optional
+          If `True`, print a table of extract information.
+        **kwargs
+          Keyword arguments for `tab2txt`.
+
+        Returns
+        -------
+        sg : float
+          Specific gravity of the wort.
+        table : string
+          Table of the grist and extract.
+
+        """
+        from . import mash
+        from .util import tab2txt
+
+        total_weight = sum([f.weight for f in self.fermentables])
+        total_extract = sum([f.extract(efficiency) for f in self.fermentables])
+        
+        tab = []
+        for f in self.mash + self.vorlauf:
+            ex = f.extract(efficiency)
+            tab.append([f.name, f.timing.name, f.weight,
+                        f.weight / total_weight, f.ppg, ex, ex / total_extract])
+
+        colnames = ['Grain/Adjunct', 'Timing', 'Weight', 'Weight Fraction',
+                    'PPG', 'Extract', 'Extract Fraction']
+        colformats = ['{}', '{}', '{:.3f}', '{:.1%}', '{:d}', '{:.1f}',
+                      '{:.1%}']
+        sg = sum([row[-2] for row in tab]) / volume / 1000 + 1
+        footer = '''Volume: {:.1f} gal,
+Efficiency: {:.0%},
+Specific gravity: {:.3f}
+'''.format(volume, efficiency, sg)
+
+        if verbose:
+            print(tab2txt(tab, colnames, footer, colformats=colformats,
+                          **kwargs))
+
+        return sg
+
 class Brew(object):
     """Homebrew recipe calculator.
 
