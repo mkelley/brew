@@ -9,8 +9,8 @@ mash --- Wort and mash.
 from enum import Enum
 
 class PPG(Enum):
-    AmericanTwoRow = "American 6-row", 35
-    AmericanSixRow = "American 2-row", 37
+    AmericanTwoRow = "American 2-row", 37
+    AmericanSixRow = "American 6-row", 35
     AmericanPaleAle = "American pale ale", 36
     BelgianPaleAle = "Belgian pale ale", 37
     BelgianPilsener = "Belgian pilsener", 37
