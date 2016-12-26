@@ -200,26 +200,26 @@ class Wort(collections.abc.MutableSequence):
       The boil time in minutes.
     volume : float, optional
       The target wort volume in the primary, gallons.
-    T_sacc : int or list, optional
+    T_sacc : int or array-like, optional
       The saccharification temperature step(s).
 
     """
 
     def __init__(self, a=[], efficiency=0.75, boil_time=60, volume=5.5,
                  T_sacc=152):
-        import collections
+        from collections import Iterable
 
         assert isinstance(a, collections.Iterable)
         assert isinstance(efficiency, float)
         assert isinstance(boil_time, (float, int))
         assert isinstance(volume, (float, int))
-        assert isinstance(T_sacc, (int, float, collections.Iterable))
+        assert isinstance(T_sacc, (int, float, Iterable))
 
         self._list = list(a)
         self.efficiency = efficiency
         self.boil_time = float(boil_time)
         self.volume = float(volume)
-        self.T_sacc = T_sacc
+        self.T_sacc = tuple(T_sacc) if isinstance(T_sacc, Iterable) else (T_sacc,)
 
     def __contains__(self, value):
         return value in self._list
@@ -322,7 +322,7 @@ class Wort(collections.abc.MutableSequence):
     @property
     def hop_stand(self):
         return any([isinstance(hop.timing, T.HopStand) for hop in self.hops])
-    
+
     def gravity(self, time=T.Final, verbose=True, **kwargs):
         """Estimate specific gravity.
 
@@ -531,115 +531,138 @@ class Brew:
 
     Parameters
     ----------
-    volume : float, optional
-      Target volume in gallons.
-    mash : dict, optional
-      
-    kettle : dict, optional
-      Same as mash, but for sugars added to the kettle.  Assumes 100%
-      efficiency.
-    r : float, optional
+    wort : Wort
+      The wort to brew.
+    culture : Culture
+      The fermentation culture.
+    r_mash : float, optional
       Ratio of water volume to grain weight. [qt/lb]
-    T_rest : float or list, optional
-       Initial (pre-saccharification) rest temperature(s).
-    T_sacc : float or list, optional
-      Saccharification rest temperature(s).
-    hops : dict, optional
-
-    yeast : string or tuple, optional
-      
-
-    **kwargs
-      Any `wort`, `hops.schedule`, or `mash.schedule` keywords.
+    T_rest : int or array-like, optional
+      Initial (pre-saccharification) rest temperature(s).
+    mash_out : bool, optional
+      Set to `True` to add a mash-out step, targeting 170 F.
+    r_boil : float, optional
+      Boil-off rate, gal/hr.
+    mlt_gap : float, optional
+      Leftover volume in MLT after lauter, gal.
+    kettle_gap : float, optional
+      Leftover volume in kettle after racking, gal.
+    T_water : int, optional
+      Water temperature for step infusions.
+    T_grain : int, optional
+      Grain temperature.
 
     """
 
-    def __init__(self, volume=5.5, mash={'American 2-row': 10},
-                 kettle={}, r=1.4, T_rest=[], T_sacc=[150, 170], t_boil=60,
-                 r_boil=1.3, hops={'Cascade': (7, 1.0, 60)},
-                 yeast='WLP001', **kwargs):
+    def __init__(self, wort, culture, r_mash=1.4, T_rest=[],
+                 mash_out=True, r_boil=1.3, mlt_gap=0.5, kettle_gap=0.25,
+                 T_water=200, T_grain=65):
+        from collections import Iterable
 
-        self.volume = volume
-        self.mash = {'American 2-row': 10} if mash is None else mash
-        self.kettle = kettle
+        assert isinstance(wort, Wort)
+        assert isinstance(culture, Culture)
+        assert isinstance(r_mash, (float, int))
+        assert isinstance(T_rest, (int, float, Iterable))
+        assert isinstance(mash_out, bool)
+        assert isinstance(r_boil, (float, int))
+        assert isinstance(mlt_gap, (float, int))
+        assert isinstance(kettle_gap, (float, int))
+        assert isinstance(T_water, (int, float))
+        assert isinstance(T_grain, (int, float))
 
-        self.r = r
-        T_rest = T_rest if isinstance(T_rest, (list, tuple)) else [T_rest]
-        self.T_sacc = T_sacc if isinstance(T_sacc, (list, tuple)) else [T_sacc]
-        self.T_mash = []
-        self.T_mash.extend(T_rest)
-        self.T_mash.extend(self.T_sacc)
-
-        self.t_boil = t_boil
-        self.r_boil = r_boil
-
-        self.hops = hops
-
-        self.yeast = yeast
-
-        self.kwargs = kwargs
-        
-        self.brew()
+        self.wort = wort
+        self.culture = culture
+        self.r_mash = float(r_mash)
+        self.T_rest = tuple(T_rest) if isinstance(T_rest, Iterable) else (T_rest)
+        self.mash_out = mash_out
+        self.r_boil = float(r_boil)
+        self.mlt_gap = float(mlt_gap)
+        self.kettle_gap = float(kettle_gap)
+        self.T_water = int(T_water)
+        self.T_grain = int(T_grain)
 
     def __repr__(self):
         return self.brew()
 
     @property
-    def weight(self):
-        w = 0
-        if len(self.mash) == 0:
-            return w
-
-        for v in self.mash.values():
-            w += v[0] if isinstance(v, (list, tuple)) else v
-
-        return w
-
-    @property
-    def yeast(self):
-        return self._yeast
-
-    @yeast.setter
-    def yeast(self, y):
-        from . import fermentation
-        self._yeast = fermentation.yeast(y)
+    def T_mash(self):
+        T = self.T_rest + self.wort.T_sacc
+        if self.mash_out:
+            T += (170,)
+        return T
 
     def brew(self, **kwargs):
+        """
+
+        Parameters
+        ----------
+        
+        """
+        self.wort.gravity(**kwargs)
+        self.wort.bitterness(**kwargs)
+        self.infusion(**kwargs)
+        self.culture.ferment(self.wort, **kwargs)
+
+    def infusion(self, verbose=True, **kwargs):
+        """Water temperature and volume schedule for infusion mashing.
+
+        Parameters
+        ----------
+        verbose : bool, optional
+          If `True`, print a summary table.
+        **kwargs
+          Keyword arguments for `tab2txt`.
+
+        Returns
+        -------
+        T_infusion : tuple
+          Temperature of each infusion, Fahrenheit.
+        v_infusion : tuple
+          Volume of each infusion, gallons.
+        v_sparge : float
+          Volume of sparge water, gallons.
+        v_final : float
+          Final volume collected after latuer.
+
+        """
+
+        from .util import tab2txt
         from . import mash
-        from . import hops
-        from . import fermentation
 
-        self.kwargs.update(kwargs)
+        v_final = (self.wort.volume + self.wort.boil_time / 60 * self.r_boil
+                   + self.kettle_gap)
 
-        sg, tab = mash.wort(self.mash, self.kettle, self.volume, **self.kwargs)
-        outs = tab
-        v_mash, T_infusions, tab = mash.infusion(
-            self.r, self.weight, self.volume, self.T_mash,
-            t_boil=self.t_boil, r_boil=self.r_boil,
-            **self.kwargs)
-        outs += tab
+        grain_weight = sum([g.weight for g in self.wort.mash])
 
-        # Use volume half way through boil to estimate boil specific
-        # gravity
-        v = self.volume + self.t_boil / 60.0 * self.r_boil / 2
-        boil_sg = (sg - 1) * self.volume / v + 1
+        tab = []
+        v_infusion = []
+        T_infusion = []
+        for i in range(len(self.T_mash)):
+            if i == 0:
+                v_infusion.append(self.r_mash * grain_weight / 4)
+                T = mash.strike_water(self.r_mash, self.T_grain, self.T_mash[0])
+                T_infusion.append(T)
+            else:
+                v = mash.infusion_volume(
+                    sum(v_infusion) * 4, grain_weight,
+                    self.T_mash[i-1], self.T_mash[i])
+                v_infusion.append(v / 4)
+                T_infusion.append(self.T_water)
 
-        util, bit, tab = hops.schedule(boil_sg, self.volume, self.hops,
-                                       **self.kwargs)
-        outs += tab
+            tab.append([self.T_mash[i], T_infusion[i], v_infusion[i]])
 
-        grain_sg = mash.wort(self.mash, {}, self.volume, **self.kwargs)[0]
-        fg, app_atten = fermentation.final_gravity(grain_sg, self.T_sacc[0],
-                                                   self.yeast)
-        cal = fermentation.calories(sg, fg)
-        carbs = fermentation.carbohydrates(sg, fg)
-        outs += '''
-Fermentation with {}
-Apparent attenutation: {:.0f}%
-Final gravity: {:.3f}
-ABV: {:.1f}%
-Calories: {:.0f}
-Carbohydrates: {:.1f} g
-'''.format(self.yeast[0], app_atten, fg, fermentation.abv(sg, fg), cal, carbs)
+        v_mash = sum(v_infusion)
+        v_sparge = (v_final - v_mash + 0.125 * grain_weight
+                    + self.mlt_gap + self.wort.boil_time / 60 * self.r_boil)
 
-        return outs
+        if verbose:
+            footer = '''Total mash water: {:.1f} gal ({:.1f} qt/lb),
+Sparge with {:.1f} gal of water
+'''.format(v_mash, v_mash * 4 / grain_weight, v_sparge)
+
+            columns = ['T mash (F)', 'T water (F)', 'Volume (gal)']
+            colformats = ['{:.0f}', '{:.0f}', '{:.2f}']
+            print(tab2txt(tab, columns, footer, colformats=colformats,
+                          **kwargs))
+
+        return T_infusion, v_infusion, v_sparge / 4, v_final / 4

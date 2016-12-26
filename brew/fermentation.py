@@ -106,9 +106,9 @@ def final_gravity(sg, T_sacc, culture):
     ----------
     sg : float
       Starting gravity, without any 100% fermentables.
-    T_sacc : int or array
+    T_sacc : int or array-like
       Saccharification temperature(s).  For a list, the average will be used.
-    culture : CultureBank or array
+    culture : CultureBank or array-like
       The culture to use for fermentation, `(name, attenuation)`, or
       `(name, min, max attenuation)`.
 
@@ -118,16 +118,21 @@ def final_gravity(sg, T_sacc, culture):
 
     """
     
-    import collections
+    from collections import Iterable
 
-    assert isinstance(culture, (CultureBank, collections.Iterable))
+    assert isinstance(culture, (CultureBank, Iterable))
     if isinstance(culture, CultureBank):
         c = culture.value
     else:
         c = culture
 
+    if isinstance(T_sacc, Iterable):
+        T = sum(T_sacc) / len(T_sacc)
+    else:
+        T = T_sacc
+
     atten = sum(c[1:]) / (len(c) - 1)
-    dT = T_sacc - 152
+    dT = T - 152
     a = atten - dT
     return sg - (sg - 1) * a / 100
 
