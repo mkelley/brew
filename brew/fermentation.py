@@ -6,38 +6,39 @@ fermentation --- Yeast and fermentations.
 
 """
 
-# key, (name, min, max apparent attenutation)
-yeast_data = {
-    'WLP001': ('California Ale', 73, 80),
-    'WLP002': ('English Ale', 63, 70),
-    'WLP004': ('Irish Ale', 69, 74),
-    'WLP007': ('Dry English Ale', 70, 80),
-    'WLP051': ('California Ale V', 70, 75),
-    'WLP072': ('French Ale', 68, 75),
-    'WLP080': ('Cream Ale Blend', 75, 80),
-    'WLP300': ('Hefeweizen', 72, 76),
-    'WLP400': ('Belgian Wit', 74, 78),
-    'WLP500': ('Monastery Ale', 75, 80),
-    'WLP530': ('Abbey Ale', 75, 80),
-    'WLP550': ('Belgian Ale', 78, 85),
-    'WLP565': ('Belgian Saison I', 65, 75),
-    'WLP566': ('Belgian Saison II', 78, 85),
-    'WLP568': ('Belgian Style Saison', 70, 80),
-    'WLP570': ('Belgian Golden Ale', 73, 78),
-    'WLP585': ('Belgian Saison III', 70, 74),
-    'WLP590': ('French Saison', 73, 80),
-    'WLP810': ('San Francisco Lager', 65, 70),
-    'WLP820': ('Oktoberfest/Märzen Lager', 65, 73),
-    'WLP644': ('Sacchromyces bruxellensis Trois', 85, 100),
-    'WLP645': ('Brettanomyces claussenii', 85, 100),
-    'WLP648': ('Brettanomyces bruxellensis Trois Vrai', 85, 100),
-    'WLP650': ('Brettanomyces bruxellensis', 85, 100),
-    'WLP650': ('Brettanomyces lambicus', 85, 100),
-    'WLP655': ('Sour Mix 1', 85, 100),
-    'WLP665': ('Flemish Ale Blend', 80, 100),
-    'WLP670': ('American Farmhouse Blend', 75, 82),
-    'US-05': ('American Ale', 81, 81),
-}
+from enum import Enum
+
+class CultureBank(Enum):
+    # name, min, max apparent attenutation
+    CaliforniaAle = ('WLP001, California Ale', 73, 80)
+    EnglishAle = ('WLP002, English Ale', 63, 70)
+    IrishAle = ('WLP004, Irish Ale', 69, 74)
+    DryEnglishAle = ('WLP007, Dry English Ale', 70, 80)
+    CaliforniaAleV = ('WLP051, California Ale V', 70, 75)
+    FrenchAle = ('WLP072, French Ale', 68, 75)
+    CreamAleBlend = ('WLP080, Cream Ale Blend', 75, 80)
+    Hefeweizen = ('WLP300, Hefeweizen', 72, 76)
+    BelgianWit = ('WLP400, Belgian Wit', 74, 78)
+    MonasteryAle = ('WLP500, Monastery Ale', 75, 80)
+    AbbeyAle = ('WLP530, Abbey Ale', 75, 80)
+    BelgianAle = ('WLP550, Belgian Ale', 78, 85)
+    BelgianSaisonI = ('WLP565, Belgian Saison I', 65, 75)
+    BelgianSaisonII = ('WLP566, Belgian Saison II', 78, 85)
+    BelgianStyleSaison = ('WLP568, Belgian Style Saison', 70, 80)
+    BelgianGoldenAle = ('WLP570, Belgian Golden Ale', 73, 78)
+    BelgianSaisonIII = ('WLP585, Belgian Saison III', 70, 74)
+    FrenchSaison = ('WLP590, French Saison', 73, 80)
+    SanFranciscoLager = ('WLP810, San Francisco Lager', 65, 70)
+    OktoberfestLager = ('WLP820, Oktoberfest/Märzen Lager', 65, 73)
+    SacchromycesBruxellensisTrois = ('WLP644, Sacchromyces bruxellensis Trois', 85, 100)
+    BrettanomycesClaussenii = ('WLP645, Brettanomyces claussenii', 85, 100)
+    BrettanomycesBruxellensisTroisVrai = ('WLP648, Brettanomyces bruxellensis Trois Vrai', 85, 100)
+    BrettanomycesBruxellensis = ('WLP650, Brettanomyces bruxellensis', 85, 100)
+    BrettanomycesLambicus = ('WLP653, Brettanomyces lambicus', 85, 100)
+    SourMix1 = ('WLP655, Sour Mix 1', 85, 100)
+    FlemishAleBlend = ('WLP665, Flemish Ale Blend', 80, 100)
+    AmericanFarmhouseBlend = ('WLP670, American Farmhouse Blend', 75, 82)
+    AmericanAle = ('US-05, American Ale', 81, 81)
 
 def abv(og, fg):
     """Alcohol by volume.
@@ -98,50 +99,37 @@ def calories_protein(og, fg):
 
     return 0.994 * fg * real_extract(og, fg)
 
-def final_gravity(sg, T_mash, yst):
-
+def final_gravity(sg, T_sacc, culture):
     """Estimate final gravity.
     
     Parameters
     ----------
     sg : float
       Starting gravity, without any 100% fermentables.
-    T_mash : float
-      Mash temperature.
-    yst : string or tuple
-      Name of a yeast strain, (name, attenuation), or (name, (min, max
-      attenuation)).
+    T_sacc : int or array
+      Saccharification temperature(s).  For a list, the average will be used.
+    culture : CultureBank or array
+      The culture to use for fermentation, `(name, attenuation)`, or
+      `(name, min, max attenuation)`.
 
     Returns
     -------
     fg : float
-    app_atten : float
 
     """
+    
+    import collections
 
-    name, atten = yeast(yst)
-    dT = T_mash - 152
-    if isinstance(atten, (list, tuple)):
-        a = sum(atten) / 2 - dT
+    assert isinstance(culture, (CultureBank, collections.Iterable))
+    if isinstance(culture, CultureBank):
+        c = culture.value
     else:
-        a = atten - dT
+        c = culture
 
-    return sg - (sg - 1) * a / 100, a
-
-def find_yeast(k):
-    """Find yeast data by product key in internal database.
-
-    """
-
-    try:
-        name, atten_min, atten_max = yeast_data[k]
-    except KeyError:
-        print("Yeast not found.  Valid values:")
-        for k, v in sorted(yeast_data.items()):
-            print('"{}" ({})'.format(k, v[0]))
-        raise
-
-    return k, name, (atten_min, atten_max)
+    atten = sum(c[1:]) / (len(c) - 1)
+    dT = T_sacc - 152
+    a = atten - dT
+    return sg - (sg - 1) * a / 100
 
 def priming_sugar(T, r, v, fermentable='table sugar'):
     """Weight of sugar for priming.
@@ -213,31 +201,3 @@ def real_extract(og, fg):
     ae = sg2plato(fg)
     q = 0.22 + 0.001 * oe
     return (q * oe + ae) / (1 + q)
-
-def yeast(y):
-    """Yeast name and attenuation.
-
-    First checks that `y` is a tuple of (name, attenuation) or (name,
-    (min, max attenuation)).  If not, then find yeast from the
-    internal database.
-
-    """
-
-    try:
-        if isinstance(y, (tuple, list)):
-            assert isinstance(y[0], str)
-            assert isinstance(y[1], (tuple, list, float, int))
-            if isinstance(y[1], (tuple, list)):
-                assert len(y[1]) == 2
-                assert isinstance(y[1][0], (float, int))
-                assert isinstance(y[1][1], (float, int))
-        elif isinstance(y, str):
-            product, name, atten = find_yeast(y)
-            name = '{} / {}'.format(product, name)
-            y = name, atten
-        else:
-            raise TypeError
-        return y
-    except (TypeError, AssertionError) as exc:
-        raise TypeError('yeast must be a product key (e.g., "WLP001") or a 2-element tuple: (name, attenuation in %).  attenuation may be a tuple of min, max attenuation.') from exc
-

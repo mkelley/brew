@@ -9,7 +9,20 @@ brew --- Homebrew recipe calculator.
 import collections
 from . import timing as T
 
-class Ingredient(object):
+__all__ = [
+    'Ingredient',
+    'Fermentable',
+    'Hop',
+    'Spice',
+    'Fruit',
+    'Other',
+    'Wort',
+    'Culture',
+    'Beer',
+    'Brew',
+]
+
+class Ingredient:
     """Wort ingredient.
 
     Parameters
@@ -187,21 +200,26 @@ class Wort(collections.abc.MutableSequence):
       The boil time in minutes.
     volume : float, optional
       The target wort volume in the primary, gallons.
+    T_sacc : int or list, optional
+      The saccharification temperature step(s).
 
     """
 
-    def __init__(self, a=[], efficiency=0.75, boil_time=60, volume=5.5):
+    def __init__(self, a=[], efficiency=0.75, boil_time=60, volume=5.5,
+                 T_sacc=152):
         import collections
 
         assert isinstance(a, collections.Iterable)
         assert isinstance(efficiency, float)
         assert isinstance(boil_time, (float, int))
         assert isinstance(volume, (float, int))
+        assert isinstance(T_sacc, (int, float, collections.Iterable))
 
         self._list = list(a)
         self.efficiency = efficiency
         self.boil_time = float(boil_time)
         self.volume = float(volume)
+        self.T_sacc = T_sacc
 
     def __contains__(self, value):
         return value in self._list
@@ -406,8 +424,109 @@ class Wort(collections.abc.MutableSequence):
 
         return sum(bit)
 
+class Culture:
+    """Yeast or other cultures, ready for fermentation.
 
-class Brew(object):
+    Parameters
+    ----------
+    culture : CultureBank
+      The type of culture to propagate.
+    
+    """
+
+    def __init__(self, culture):
+        from .fermentation import CultureBank
+
+        assert isinstance(culture, CultureBank)
+        self.culture = culture
+
+    def ferment(self, wort):
+        """Ferment some wort.
+
+        Parameters
+        ----------
+        wort : Wort
+          The wort to ferment.
+
+        """
+        
+        from . import fermentation
+        from . import timing as T
+
+        assert isinstance(wort, Wort)
+        
+        sg = wort.gravity(verbose=False)
+        grain_sg = wort.gravity(timing=T.Vorlauf, verbose=False)
+        fg = fermentation.final_gravity(grain_sg, wort.T_sacc, self.culture)
+
+        return Beer(sg, fg, bitterness=wort.bitterness(verbose=False))
+
+class Beer:
+    """The final product.
+
+    Parameters
+    ----------
+    sg : float
+      Starting gravity.
+    fg : float
+      Final gravity.
+    bitterness : float, optional
+      Beer bitterness in IBUs.
+    verbose : boot, optional
+      Set to `True` to prevent printing the beer stats on init.
+
+    """
+
+    def __init__(self, sg, fg, bitterness=None, verbose=False):
+        assert isinstance(sg, float)
+        assert isinstance(fg, float)
+
+        if bitterness is not None:
+            assert isinstance(bitterness, (float, int))
+            bitterness = int(bitterness)
+
+        self.sg = sg
+        self.fg = fg
+        self.bitterness = bitterness
+        self.verbose = verbose
+
+        if not verbose:
+            self.stats()
+
+    @property
+    def abv(self):
+        from . import fermentation
+        return fermentation.abv(self.sg, self.fg)
+
+    @property
+    def app_attenuation(self):
+        return 100 * (self.sg - self.fg) / (self.sg - 1)
+
+    @property
+    def calories(self):
+        from . import fermentation
+        return fermentation.calories(self.sg, self.fg)
+
+    @property
+    def carbohydrates(self):
+        from . import fermentation
+        return fermentation.carbohydrates(self.sg, self.fg)
+
+    def stats(self):
+        print('''
+Starting gravity: {:.3f}
+Final gravity: {:.3f}'''.format(self.sg, self.fg))
+
+        if self.bitterness is not None:
+            print('Bitterness: {:d} IBU'.format(self.bitterness))
+
+        print('''Apparent attenutation: {:.0f}%
+ABV: {:.1f}%
+Calories: {:.0f}
+Carbohydrates: {:.1f} g
+'''.format(self.app_attenuation, self.abv, self.calories, self.carbohydrates))
+
+class Brew:
     """Homebrew recipe calculator.
 
     Parameters
