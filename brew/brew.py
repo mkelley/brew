@@ -523,8 +523,8 @@ class Beer:
         self.bitterness = bitterness
         self.verbose = verbose
 
-        if not verbose:
-            self.stats()
+        if verbose:
+            self.summary()
 
     @property
     def abv(self):
@@ -545,7 +545,9 @@ class Beer:
         from . import fermentation
         return fermentation.carbohydrates(self.sg, self.fg)
 
-    def stats(self):
+    def summary(self):
+        """Print a summary of the beer."""
+
         print('''
 Starting gravity: {:.3f}
 Final gravity: {:.3f}'''.format(self.sg, self.fg))
