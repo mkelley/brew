@@ -6,7 +6,7 @@ brew --- Homebrew recipe calculator.
 
 """
 
-import collections
+from collections.abc import MutableSequence
 from . import timing as T
 
 __all__ = [
@@ -181,13 +181,37 @@ class Hop(Ingredient):
 class Spice(Ingredient):
     pass
 
-class Fruit(Ingredient):
-    pass
+class Fruit(Fermentable):
+    """Fermentable fruit forms.
+    
+    Parameters
+    ----------
+    name : string
+      The name.
+    ppg : int
+      Gravity points per pound per gallon of wort.
+    weight : float
+      Weight in pounds.
+    timing : Timing, optional
+      The timing of the addition.
+      
+    """
+
+    def __init__(self, name, ppg, weight, timing=T.Secondary()):
+        assert isinstance(name, str)
+        assert isinstance(ppg, (float, int))
+        assert isinstance(weight, (float, int))
+        assert isinstance(timing, T.Timing)
+        
+        self.name = name
+        self.ppg = int(ppg)
+        self.weight = float(weight)
+        self.timing = timing
 
 class Other(Ingredient):
     pass
 
-class Wort(collections.abc.MutableSequence):
+class Wort(MutableSequence):
     """Make wort with water, malt, adjuncts, hops, etc.
 
     Parameters
@@ -209,7 +233,7 @@ class Wort(collections.abc.MutableSequence):
                  T_sacc=152):
         from collections import Iterable
 
-        assert isinstance(a, collections.Iterable)
+        assert isinstance(a, Iterable)
         assert isinstance(efficiency, float)
         assert isinstance(boil_time, (float, int))
         assert isinstance(volume, (float, int))
@@ -253,7 +277,7 @@ class Wort(collections.abc.MutableSequence):
         
     def __setitem__(self, index, value):
         assert isinstance(value, Ingredient)
-        collections.abc.MutableSequence.__setitem__(self, index, value)
+        MutableSequence.__setitem__(self, index, value)
 
     def append(self, v):
         self._list.append(v)
@@ -351,11 +375,17 @@ class Wort(collections.abc.MutableSequence):
                              for f in self.fermentables])
         
         tab = []
-        for f in self.mash + self.vorlauf:
-            ex = f.extract(self.efficiency)
+        for f in self.fermentables:
+            if f in self.mash + self.vorlauf:
+                efficiency = self.efficiency
+            else:
+                efficiency = 1.0
+
+            ex = f.extract(efficiency)
             tab.append([f.name, f.timing.name, f.weight,
                         f.weight / total_weight, f.ppg, ex,
                         ex / total_extract])
+
         sg = sum([row[-2] for row in tab]) / self.volume / 1000 + 1
 
         if verbose:
@@ -440,13 +470,15 @@ class Culture:
         assert isinstance(culture, CultureBank)
         self.culture = culture
 
-    def ferment(self, wort):
+    def ferment(self, wort, verbose=True):
         """Ferment some wort.
 
         Parameters
         ----------
         wort : Wort
           The wort to ferment.
+        verbose : bool, optional
+          Has no effect, but is passed onto the `Beer`.
 
         """
         
@@ -459,7 +491,8 @@ class Culture:
         grain_sg = wort.gravity(timing=T.Vorlauf, verbose=False)
         fg = fermentation.final_gravity(grain_sg, wort.T_sacc, self.culture)
 
-        return Beer(sg, fg, bitterness=wort.bitterness(verbose=False))
+        return Beer(sg, fg, bitterness=wort.bitterness(verbose=False),
+                    verbose=verbose)
 
 class Beer:
     """The final product.
@@ -591,17 +624,30 @@ class Brew:
             T += (170,)
         return T
 
-    def brew(self, **kwargs):
-        """
+    def brew(self, verbose=True, **kwargs):
+        """Brew the beer.
 
         Parameters
         ----------
+        verbose : bool, optional
+          If `True` print gravity, bitterness, infusion, and
+          fermentation summaries.
+        **kwargs
+          Keyword arguments for `util.tab2txt`
         
+        Returns
+        -------
+        beer : Beer
+          The final product.
+
         """
-        self.wort.gravity(**kwargs)
-        self.wort.bitterness(**kwargs)
-        self.infusion(**kwargs)
-        self.culture.ferment(self.wort, **kwargs)
+
+        if verbose:
+            self.wort.gravity(verbose=verbose, **kwargs)
+            self.wort.bitterness(verbose=verbose, **kwargs)
+            self.infusion(verbose=verbose, **kwargs)
+
+        return self.culture.ferment(self.wort, verbose=verbose, **kwargs)
 
     def infusion(self, verbose=True, **kwargs):
         """Water temperature and volume schedule for infusion mashing.
