@@ -15,6 +15,7 @@ __all__ = [
     'Hop',
     'Spice',
     'Fruit',
+    'Priming',
     'Other',
     'Wort',
     'Culture',
@@ -34,11 +35,12 @@ class Ingredient:
 
     """
     
-    def __init__(self, name, quanitity):
+    def __init__(self, name, quantity, timing=T.Boil(60)):
         assert isinstance(name, str)
         assert isinstance(quantity, str)
         self.name = name
         self.quantity = quantity
+        self.timing = timing
 
 class Fermentable(Ingredient):
     """Grains and adjuncts.
@@ -209,6 +211,9 @@ class Fruit(Fermentable):
         self.timing = timing
 
 class Other(Ingredient):
+    pass
+
+class Priming(Ingredient):
     pass
 
 class Wort(MutableSequence):
