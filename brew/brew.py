@@ -15,13 +15,29 @@ __all__ = [
     'Hop',
     'Spice',
     'Fruit',
-    'Priming',
     'Other',
+    'Priming',
+    'Water',
     'Wort',
     'Culture',
     'Beer',
     'Brew',
 ]
+
+_default_format = 'text'  # default format for summaries
+
+def set_format(format):
+    """Set the default format for summary output.
+
+    Parameters
+    ----------
+    format : string
+      'text', 'html', 'notebook'
+
+    """
+    global _default_format
+    assert format in ['text', 'html', 'notebook']
+    _default_format = format
 
 class Ingredient:
     """Wort ingredient.
@@ -41,6 +57,12 @@ class Ingredient:
         self.name = name
         self.quantity = quantity
         self.timing = timing
+
+    def __repr__(self):
+        return "<{}: {}>".format(type(self).__name__, str(self))
+
+    def __str__(self):
+        return "{}, {} at {}".format(self.name, self.quantity, self.timing)
 
 class Fermentable(Ingredient):
     """Grains and adjuncts.
@@ -81,13 +103,17 @@ class Fermentable(Ingredient):
         self.weight = float(weight)
         self.timing = timing
 
-    def __repr__(self):
-        return "<Fermentable: {}>".format(str(self))
-
     def __str__(self):
-        return "{} ({:d} PPG), {:.2f} lbs, {}".format(
-            self.name, self.ppg, self.weight, self.timing)
+        return "{} ({:d} PPG), {} at {}".format(
+            self.name, self.ppg, self.quantity, self.timing)
 
+    @property
+    def quantity(self):
+        if "{:.2f}".format(self.weight) == '1.00':
+            return '1.00 lb'
+        else:
+            return "{:.2f} lbs".format(self.weight)
+    
     def extract(self, mash_efficiency):
         """Amount of extract per gallon."""
         ex = self.weight * self.ppg
@@ -130,9 +156,13 @@ class Hop(Ingredient):
         return '<Hop: {}>'.format(str(self))
 
     def __str__(self):
-        return '{} ({}% α), {:.2f} oz, {}'.format(
-            self.name, self.alpha, self.weight, self.timing)
+        return '{} ({}% α), {} at {}'.format(
+            self.name, self.alpha, self.quantity, self.timing)
 
+    @property
+    def quantity(self):
+        return "{:.2f} oz".format(self.weight)
+    
     def bitterness(self, gravity, volume, boil=None, hop_stand=False):
         """Compute bitterness contribution.
 
@@ -215,6 +245,27 @@ class Other(Ingredient):
 
 class Priming(Ingredient):
     pass
+
+class Water(Ingredient):
+    """Water source.
+
+    No volume specified, timing is not applicable.
+
+    Parameters
+    ----------
+    name : string
+      The name of the water.
+
+    """
+    
+    def __init__(self, name):
+        assert isinstance(name, str)
+        self.name = name
+        self.timing = T.Unspecified()
+        self.quantity = ''
+
+    def __str__(self):
+        return self.name
 
 class Wort(MutableSequence):
     """Make wort with water, malt, adjuncts, hops, etc.
@@ -351,19 +402,17 @@ class Wort(MutableSequence):
     @property
     def hop_stand(self):
         return any([isinstance(hop.timing, T.HopStand) for hop in self.hops])
-
-    def gravity(self, time=T.Final, verbose=True, **kwargs):
+    
+    def gravity(self, time=T.Final(), volume=None):
         """Estimate specific gravity.
 
         Parameters
         ----------
-        time : Timing
+        time : Timing, optional
           The epoch at which the gravity should be estimated.  This
           parameter determines which `Fermantable`s are included.
-        verbose : bool, optional
-          If `True`, print a table of extract information.
-        **kwargs
-          Keyword arguments for `tab2txt`.
+        volume : float, optional
+          Use this volume instead of the final wort volume.
 
         Returns
         -------
@@ -373,13 +422,55 @@ class Wort(MutableSequence):
         """
 
         from . import mash
-        from .util import tab2txt
 
-        total_weight = sum([f.weight for f in self.fermentables])
-        total_extract = sum([f.extract(self.efficiency)
-                             for f in self.fermentables])
+        volume = self.volume if volume is None else volume
+
+        fermentables = list(filter(lambda f: f.timing <= time,
+                                   self.fermentables))
         
-        tab = []
+        total_weight = sum([f.weight for f in fermentables])
+        extract = [f.extract(self.efficiency) for f in fermentables]
+        total_extract = sum(extract)
+
+        return total_extract / volume / 1000 + 1
+    
+    def summary(self, **kwargs):
+        """Summarize ingredients and mash extract.
+
+        Parameters
+        ----------
+        format : string, optional
+          Output format: 'text', 'html', 'notebook'.
+        **kwargs
+          Keyword arguments for `rows2tab`.
+
+        """
+
+        self.summarize_ingredients(**kwargs)
+        self.summarize_extract(**kwargs)
+
+    def summarize_extract(self, **kwargs):
+        """Summarize mash extract.
+
+        Parameters
+        ----------
+        format : string, optional
+          Output format: 'text', 'html', 'notebook'.
+        **kwargs
+          Keyword arguments for `rows2tab`.
+
+        """
+
+        from .util import rows2tab
+
+        kwargs['format'] = kwargs.get('format', _default_format)
+        
+        total_weight = sum([f.weight for f in self.fermentables])
+        extract = [f.extract(self.efficiency) for f in self.fermentables]
+        total_extract = sum(extract)
+        sg = total_extract / self.volume / 1000 + 1
+
+        rows = []
         for f in self.fermentables:
             if f in self.mash + self.vorlauf:
                 efficiency = self.efficiency
@@ -387,77 +478,44 @@ class Wort(MutableSequence):
                 efficiency = 1.0
 
             ex = f.extract(efficiency)
-            tab.append([f.name, f.timing.name, f.weight,
-                        f.weight / total_weight, f.ppg, ex,
-                        ex / total_extract])
+            rows.append([f.name, f.timing.name, f.weight,
+                         f.weight / total_weight, f.ppg, ex,
+                         ex / total_extract])
 
-        sg = sum([row[-2] for row in tab]) / self.volume / 1000 + 1
+        colnames = ['Grain/Adjunct', 'Timing', 'Weight', 'Weight Fraction',
+                    'PPG', 'Extract', 'Extract Fraction']
+        colformats = ['{}', '{}', '{:.3f}', '{:.1%}', '{:d}', '{:.1f}',
+                      '{:.1%}']
+        footer = ['Volume: {:.1f} gal'.format(self.volume),
+                  'Efficiency: {:.0%}'.format(self.efficiency),
+                  'Specific gravity: {:.3f}'.format(sg)]
 
-        if verbose:
-            colnames = ['Grain/Adjunct', 'Timing', 'Weight', 'Weight Fraction',
-                        'PPG', 'Extract', 'Extract Fraction']
-            colformats = ['{}', '{}', '{:.3f}', '{:.1%}', '{:d}', '{:.1f}',
-                          '{:.1%}']
-            footer = ['Volume: {:.1f} gal'.format(self.volume),
-                      'Efficiency: {:.0%}'.format(self.efficiency),
-                      'Specific gravity: {:.3f}'.format(sg)]
+        extracts = rows2tab(rows, colnames, ',\n'.join(footer),
+                            colformats=colformats, verbose=True, **kwargs)
 
-            print(tab2txt(tab, colnames, ',\n'.join(footer),
-                          colformats=colformats, **kwargs))
-
-        return sg
-
-    def bitterness(self, verbose=True, **kwargs):
-        """Wort bitterness.
+    def summarize_ingredients(self, **kwargs):
+        """Summarize ingredients.
 
         Parameters
         ----------
-        verbose : bool, optional
-          Print out a table of hop contributions.
+        format : string, optional
+          Output format: 'text', 'html', 'notebook'.
         **kwargs
-          Keyword arguments for `tab2txt`.
-
-        Returns
-        -------
-        bit : float
-          The computed bitterness in IBUs.
+          Keyword arguments for `rows2tab`.
 
         """
 
-        from operator import itemgetter
-        from .util import tab2txt
+        from .util import rows2tab
+        
+        kwargs['format'] = kwargs.get('format', _default_format)
 
-        hop_stand = self.hop_stand
-        sg = self.gravity(verbose=False)
+        rows = []
+        for f in self:
+            t = '' if isinstance(f.timing, T.Unspecified) else str(f.timing)
+            rows.append([str(f.quantity), str(f.name), t])
 
-        tab = []
-        for hop in self.hops:
-            util, bit = hop.bitterness(sg, self.volume, boil=self.boil_time,
-                                       hop_stand=hop_stand)
-            tab.append([hop.name, 'Whole leaf' if hop.whole else 'Pellets',
-                        hop.alpha, hop.weight, hop.timing.time, util, bit])
-
-        tab.sort(key=itemgetter(0))
-        tab.sort(key=itemgetter(3), reverse=True)
-        util = [row[-2] for row in tab]
-        bit = [row[-1] for row in tab]
-
-        if verbose:
-            colnames = ['Hop', 'Type', 'Alpha', 'Weight', 'Time', 'Utilization',
-                        'Bitterness']
-            colformats = ['{}', '{}', '{:.1f}', '{:.1f}', '{:.0f}', '{:.1f}',
-                          '{:.0f}']
-
-            footer = ['Boil specific gravity: {:.3f}'.format(sg),
-                      'Volume: {} gal'.format(self.volume)]
-            if hop_stand:
-                footer += ['Hop stand']
-            footer += ['Total bitterness: {:.0f} IBU'.format(sum(bit))]
-
-            print(tab2txt(tab, colnames, ',\n'.join(footer),
-                          colformats=colformats, **kwargs))
-
-        return sum(bit)
+        colnames = ['Quantity', 'Item', 'Timing']
+        ingredients = rows2tab(rows, colnames, verbose=True, **kwargs)
 
 class Culture:
     """Yeast or other cultures, ready for fermentation.
@@ -475,15 +533,15 @@ class Culture:
         assert isinstance(culture, CultureBank)
         self.culture = culture
 
-    def ferment(self, wort, verbose=True):
+    def ferment(self, wort, bitterness=None):
         """Ferment some wort.
 
         Parameters
         ----------
         wort : Wort
           The wort to ferment.
-        verbose : bool, optional
-          Has no effect, but is passed onto the `Beer`.
+        bitterness : float, optional
+          Beer bitterness in IBU.
 
         """
         
@@ -492,12 +550,15 @@ class Culture:
 
         assert isinstance(wort, Wort)
         
-        sg = wort.gravity(verbose=False)
-        grain_sg = wort.gravity(timing=T.Vorlauf, verbose=False)
+        if bitterness is not None:
+            assert isinstance(bitterness, (float, int))
+            bitterness = int(bitterness)
+
+        sg = wort.gravity()
+        grain_sg = wort.gravity(time=T.Vorlauf)
         fg = fermentation.final_gravity(grain_sg, wort.T_sacc, self.culture)
 
-        return Beer(sg, fg, bitterness=wort.bitterness(verbose=False),
-                    verbose=verbose)
+        return Beer(sg, fg, bitterness=bitterness)
 
 class Beer:
     """The final product.
@@ -509,13 +570,11 @@ class Beer:
     fg : float
       Final gravity.
     bitterness : float, optional
-      Beer bitterness in IBUs.
-    verbose : boot, optional
-      Set to `True` to prevent printing the beer stats on init.
+      Beer bitterness in IBU.
 
     """
 
-    def __init__(self, sg, fg, bitterness=None, verbose=False):
+    def __init__(self, sg, fg, bitterness=None):
         assert isinstance(sg, float)
         assert isinstance(fg, float)
 
@@ -526,10 +585,6 @@ class Beer:
         self.sg = sg
         self.fg = fg
         self.bitterness = bitterness
-        self.verbose = verbose
-
-        if verbose:
-            self.summary()
 
     @property
     def abv(self):
@@ -631,17 +686,19 @@ class Brew:
             T += (170,)
         return T
 
-    def brew(self, verbose=True, **kwargs):
+    @property
+    def boil_gravity(self):
+        return self.wort.gravity(time=T.Boil(self.wort.boil_time),
+                                 volume=self.boil_volume)
+
+    @property
+    def boil_volume(self):
+        return (self.wort.volume + self.wort.boil_time / 60 * self.r_boil
+                + self.kettle_gap)
+
+    def brew(self):
         """Brew the beer.
 
-        Parameters
-        ----------
-        verbose : bool, optional
-          If `True` print gravity, bitterness, infusion, and
-          fermentation summaries.
-        **kwargs
-          Keyword arguments for `util.tab2txt`
-        
         Returns
         -------
         beer : Beer
@@ -649,22 +706,28 @@ class Brew:
 
         """
 
-        if verbose:
-            self.wort.gravity(verbose=verbose, **kwargs)
-            self.wort.bitterness(verbose=verbose, **kwargs)
-            self.infusion(verbose=verbose, **kwargs)
+        return self.culture.ferment(self.wort)
 
-        return self.culture.ferment(self.wort, verbose=verbose, **kwargs)
+    def bitterness(self):
+        """Beer bitterness.
 
-    def infusion(self, verbose=True, **kwargs):
+        Returns
+        -------
+        bit : float
+          The computed bitterness in IBUs.
+
+        """
+
+        bitterness = 0
+        for hop in self.wort.hops:
+            bitterness += hop.bitterness(self.boil_gravity,
+                                         self.boil_volume,
+                                         boil=self.wort.boil_time,
+                                         hop_stand=self.wort.hop_stand)
+        return bitterness
+
+    def infusion(self):
         """Water temperature and volume schedule for infusion mashing.
-
-        Parameters
-        ----------
-        verbose : bool, optional
-          If `True`, print a summary table.
-        **kwargs
-          Keyword arguments for `tab2txt`.
 
         Returns
         -------
@@ -674,20 +737,14 @@ class Brew:
           Volume of each infusion, gallons.
         v_sparge : float
           Volume of sparge water, gallons.
-        v_final : float
-          Final volume collected after latuer.
 
         """
 
-        from .util import tab2txt
+        from .util import rows2tab
         from . import mash
-
-        v_final = (self.wort.volume + self.wort.boil_time / 60 * self.r_boil
-                   + self.kettle_gap)
 
         grain_weight = sum([g.weight for g in self.wort.mash])
 
-        tab = []
         v_infusion = []
         T_infusion = []
         for i in range(len(self.T_mash)):
@@ -702,20 +759,96 @@ class Brew:
                 v_infusion.append(v / 4)
                 T_infusion.append(self.T_water)
 
+        v_mash = sum(v_infusion)
+        v_sparge = (self.boil_volume - v_mash + 0.125 * grain_weight
+                    + self.mlt_gap + self.wort.boil_time / 60 * self.r_boil)
+
+        return T_infusion, v_infusion, v_sparge / 4
+
+    def summary(self, **kwargs):
+        """Summarize wort, infusion, and bitterness."""
+        self.wort.summary(**kwargs)
+        self.summarize_infusion(**kwargs)
+        self.summarize_bitterness(**kwargs)
+
+    def summarize_bitterness(self, **kwargs):
+        """Summarize beer bitterness.
+
+        Parameters
+        ----------
+        format : string, optional
+          Output format: 'text', 'html', 'notebook'.
+        **kwargs
+          Keyword arguments for `rows2tab`.
+
+        """
+
+        from operator import itemgetter
+        from .util import rows2tab
+
+        kwargs['format'] = kwargs.get('format', _default_format)
+        
+        tab = []
+        for hop in self.wort.hops:
+            util, bit = hop.bitterness(self.boil_gravity,
+                                       self.boil_volume,
+                                       boil=self.wort.boil_time,
+                                       hop_stand=self.wort.hop_stand)
+            
+            tab.append([hop.name, 'Whole leaf' if hop.whole else 'Pellets',
+                        hop.alpha, hop.weight, hop.timing.time, util, bit])
+
+        tab.sort(key=itemgetter(0))
+        tab.sort(key=itemgetter(3), reverse=True)
+        util = [row[-2] for row in tab]
+        bit = [row[-1] for row in tab]
+
+        colnames = ['Hop', 'Type', 'Alpha', 'Weight', 'Time', 'Utilization',
+                    'Bitterness']
+        colformats = ['{}', '{}', '{:.1f}', '{:.1f}', '{:.0f}', '{:.1f}',
+                      '{:.0f}']
+
+        footer = ['Boil specific gravity: {:.3f}'.format(self.boil_gravity),
+                  'Boil volume: {} gal'.format(self.boil_volume)]
+        if self.wort.hop_stand:
+            footer += ['Hop stand']
+        footer += ['Total bitterness: {:.0f} IBU'.format(sum(bit))]
+
+        tab = rows2tab(tab, colnames, ',\n'.join(footer),
+                       colformats=colformats, verbose=True, **kwargs)
+
+    def summarize_infusion(self, **kwargs):
+        """Water temperature and volume schedule for infusion mashing.
+
+        Parameters
+        ----------
+        **kwargs
+          Keyword arguments for `rows2tab`.
+
+        """
+
+        from .util import rows2tab
+        
+        kwargs['format'] = kwargs.get('format', _default_format)
+
+        grain_weight = sum([g.weight for g in self.wort.mash])
+        T_infusion, v_infusion, v_sparge = self.infusion()
+        
+        tab = []
+        for i in range(len(self.T_mash)):
             tab.append([self.T_mash[i], T_infusion[i], v_infusion[i]])
 
         v_mash = sum(v_infusion)
-        v_sparge = (v_final - v_mash + 0.125 * grain_weight
+        v_sparge = (self.boil_volume - v_mash + 0.125 * grain_weight
                     + self.mlt_gap + self.wort.boil_time / 60 * self.r_boil)
 
-        if verbose:
-            footer = '''Total mash water: {:.1f} gal ({:.1f} qt/lb),
+        footer = '''Total mash water: {:.1f} gal ({:.1f} qt/lb),
 Sparge with {:.1f} gal of water
 '''.format(v_mash, v_mash * 4 / grain_weight, v_sparge)
 
-            columns = ['T mash (F)', 'T water (F)', 'Volume (gal)']
-            colformats = ['{:.0f}', '{:.0f}', '{:.2f}']
-            print(tab2txt(tab, columns, footer, colformats=colformats,
-                          **kwargs))
+        columns = ['T mash (F)', 'T water (F)', 'Volume (gal)']
+        colformats = ['{:.0f}', '{:.0f}', '{:.2f}']
 
-        return T_infusion, v_infusion, v_sparge / 4, v_final / 4
+        tab = rows2tab(tab, columns, footer, colformats=colformats,
+                       verbose=True, **kwargs)
+

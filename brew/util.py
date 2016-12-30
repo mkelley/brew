@@ -38,64 +38,77 @@ def sg2plato(sg):
     """
     return -668.962 + 1262.45 * sg - 776.43 * sg**2 + 182.94 * sg**3
 
-def tab2txt(tab, colnames, footer, colformats=None, html=False):
-    """Format a list of table rows as RST or HTML.
+def rows2tab(rows, colnames, footer=None, colformats=None, format='text',
+             verbose=True):
+    """Format a list of table rows.
 
     Parameters
     ----------
-    tab : list of lists
+    rows : list of lists
       Each item is a row of table values.
     colnames : list of strings
       The column names.
-    footer : string
+    footer : string, optional
       Footer text.
     colformats : list of strings, optional
       Column formats in Python string format mini-language.
-    html : bool, optional
-      `True` to return an HTML-formatted table, otherwise, return RST
-      format.
+    format : string, optional
+      'text' (RST), 'html', or 'notebook'.  The latter returns IPython
+      notebook objects.
+    verbose : bool, optional
+      Set to `True` to dipslay the table.
+
+    Returns
+    -------
+    tab : string or IPython HTML object
 
     """
 
     import textwrap
+
+    assert format in ['text', 'html', 'notebook']
 
     ncols = len(colnames)
     if colformats is None:
         colformats = ['{}'] * ncols
 
     formatted_tab = []
-    for row in tab:
+    for row in rows:
         formatted_row = [f.format(c) for f, c in zip(colformats, row)]
         formatted_tab.append(formatted_row)
 
-    outs = ''
+    tab = ''
 
-    if html:
+    if format in ['html', 'notebook']:
         thead = '<tr><th>' + '</th><th>'.join(colnames) + '</th></tr>'
-        rows = ['<tr><td>' + '</td><td>'.join(row) + '</td></tr>'
-                for row in formatted_tab]
+        tbody = ['<tr><td>' + '</td><td>'.join(row) + '</td></tr>'
+                 for row in formatted_tab]
 
-        outs = """
+        tab = """
 <table class="table table-condensed table-hover small">
   <thead>
     {thead}
-  </thead>
+  </thead>""".format(thead=thead)
+        if footer is not None:
+            tab += """
   <tfoot>
     <tr><td colspan="{ncols}">{tfoot}</td></tr>
-  </tfoot>
+  </tfoot>""".format(ncols=ncols, tfoot=footer)
+
+        tab += """
   <tbody>
     {tbody}
   </tbody>
 </table>
-        """.format(thead=thead, ncols=ncols, tfoot=footer,
-                   tbody='\n    '.join(rows))
+        """.format(tbody='\n    '.join(tbody))
+
     else:
-        outs += '\n'
+        tab += '\n'
 
         colsize = []
-        for i in range(ncols):
-            rows = [colnames] + formatted_tab
-            cell_sizes = [len(row[i]) for row in rows]
+        _rows = [colnames] + formatted_tab
+        for cell in range(ncols):
+            cell_sizes = [len(row[cell]) for row in _rows]
             colsize.append(max(cell_sizes))
 
         line = '  '.join(['{{:{}}}'.format(c) for c in colsize])
@@ -104,19 +117,28 @@ def tab2txt(tab, colnames, footer, colformats=None, html=False):
         border = line.format(*['=' * c for c in colsize]) + '\n'
 
         # header
-        outs += border
-        outs += line.format(*colnames) + '\n'
-        outs += border
+        tab += border
+        tab += line.format(*colnames) + '\n'
+        tab += border
 
         # body
         for row in formatted_tab:
-            outs += line.format(*row) + '\n'
+            tab += line.format(*row) + '\n'
 
         # close
-        outs += border
+        tab += border + '\n'
 
-        outs += '\n' + footer + '\n'
+        if footer is not None:
+            tab += footer + '\n'
 
-    return outs
+    if format == 'notebook':
+        from IPython.display import HTML, display_html
+        tab = HTML(tab)
+        if verbose:
+            display_html(tab)
+    elif verbose:
+        print(tab)
+
+    return tab
 
         
