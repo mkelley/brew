@@ -11,6 +11,7 @@ from enum import Enum
 # Source: Home Brewer's Companion
 # Beersmith: http://www.beersmith.com/Grains/Grains/GrainList.htm
 class PPG(Enum):
+    AcidMalt = "Acid malt", 27  # (Germany) Beersmith
     AmericanTwoRow = "American 2-row", 37
     AmericanSixRow = "American 6-row", 35
     AmericanPaleAle = "American pale ale", 36
