@@ -73,9 +73,9 @@ class Boil(Timing):
 
     def __lt__(self, other):
         if isinstance(other, Boil):
-            return self.time < other.time
+            return self.time > other.time
         else:
-            return self < other
+            return self.step < other.step
     
     def __eq__(self, other):
         if isinstance(other, Boil):
@@ -85,9 +85,9 @@ class Boil(Timing):
     
     def __gt__(self, other):
         if isinstance(other, Boil):
-            return self.time < other.time
+            return self.time > other.time
         else:
-            return self < other
+            return self.step < other.step
 
 class HopStand(Timing):
     """Hop stands.
@@ -113,7 +113,7 @@ class HopStand(Timing):
         if isinstance(other, HopStand):
             return self.time < other.time
         else:
-            return self < other
+            return self.step < other.step
     
     def __eq__(self, other):
         if isinstance(other, HopStand):
@@ -125,7 +125,7 @@ class HopStand(Timing):
         if isinstance(other, HopStand):
             return self.time < other.time
         else:
-            return self < other
+            return self.step < other.step
 
 class Primary(Timing):
     """Additions in the primary."""
