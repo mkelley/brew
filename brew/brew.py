@@ -650,7 +650,7 @@ class Brew:
     """
 
     def __init__(self, wort, culture, r_mash=1.4, T_rest=[],
-                 mash_out=True, r_boil=1.3, mlt_gap=0.5, kettle_gap=0.25,
+                 mash_out=True, r_boil=1.3, mlt_gap=0.25, kettle_gap=0.5,
                  T_water=200, T_grain=65):
         from collections import Iterable
 
@@ -693,8 +693,7 @@ class Brew:
 
     @property
     def boil_volume(self):
-        return (self.wort.volume + self.wort.boil_time / 60 * self.r_boil
-                + self.kettle_gap)
+        return self.wort.volume + self.wort.boil_time / 60 * self.r_boil
 
     def brew(self):
         """Brew the beer.
