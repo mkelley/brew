@@ -81,7 +81,7 @@ class Boil(Timing):
         if isinstance(other, Boil):
             return self.time == other.time
         else:
-            return self == other
+            return self.step == other.step
     
     def __gt__(self, other):
         if isinstance(other, Boil):
@@ -119,7 +119,7 @@ class HopStand(Timing):
         if isinstance(other, HopStand):
             return self.time == other.time
         else:
-            return self == other
+            return self.step == other.step
     
     def __gt__(self, other):
         if isinstance(other, HopStand):
