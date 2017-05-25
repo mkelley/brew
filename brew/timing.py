@@ -47,9 +47,24 @@ class Vorlauf(Timing):
     step = 2
 
 class FirstWort(Timing):
-    """First wort additions, typically hops."""
+    """First wort additions, typically hops.
+
+    Parameters
+    ----------
+    time : float
+      Total boil length in minutes.
+
+    """
+    
     name = 'First wort'
     step = 3
+
+    def __init__(self, time):
+        assert isinstance(time, (float, int))
+        self.time = int(time)
+        
+    def __str__(self):
+        return "{}, {}-minute boil".format(self.name, self.time)
 
 class Boil(Timing):
     """Boil additions.

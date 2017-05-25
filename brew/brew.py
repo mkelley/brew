@@ -12,6 +12,7 @@ from . import timing as T
 __all__ = [
     'Ingredient',
     'Fermentable',
+    'Unfermentable',
     'Hop',
     'Spice',
     'Fruit',
@@ -39,6 +40,16 @@ def set_format(format):
     assert format in ['text', 'html', 'notebook']
     _default_format = format
 
+def execute_brew_log(filename):
+    import textwrap
+    import lxml.etree as ET
+
+    ns = {'brew': 'http://www.marthaandmike.name/brewlog'}
+    tree = ET.parse(filename)
+    c = tree.find('//brew:workbook/brew:python', namespaces=ns).text.strip()
+    c = textwrap.dedent(c)
+    exec(c)
+    
 class Ingredient:
     """Wort ingredient.
 
@@ -48,6 +59,8 @@ class Ingredient:
       The name of the ingredient.
     quantity : string
       The amount of the ingredient as a string.
+    timing : Timing, optional
+      When to add it.
 
     """
     
@@ -78,7 +91,64 @@ class Fermentable(Ingredient):
       The timing of the addition.
     name : string, optional
       Use this name instead of the name in the `PPG` object.  Required
-      if `pgg` is a float.
+      if `ppg` is a float.
+
+    """
+
+    def __init__(self, ppg, weight, timing=T.Mash(), name=None):
+        from . import mash
+
+        assert isinstance(ppg, (mash.PPG, float, int))
+        assert isinstance(weight, (float, int))
+        assert isinstance(timing, T.Timing)
+        if name is not None:
+            assert isinstance(name, str)
+
+        if isinstance(ppg, mash.PPG):
+            self.name, self.ppg, self.fermentable100 = ppg.value
+            if name is not None:
+                self.name = name
+        else:
+            ppg = float(ppg)
+            assert name is not None, '`name` is required when `ppg` is a float.'
+            self.name = name
+
+        self.weight = float(weight)
+        self.timing = timing
+
+    def __str__(self):
+        return "{} ({:d} PPG), {} at {}".format(
+            self.name, self.ppg, self.quantity, self.timing)
+
+    @property
+    def quantity(self):
+        if "{:.2f}".format(self.weight) == '1.00':
+            return '1.00 lb'
+        else:
+            return "{:.2f} lbs".format(self.weight)
+    
+    def extract(self, mash_efficiency):
+        """Amount of extract per gallon."""
+        ex = self.weight * self.ppg
+        if isinstance(self.timing, (T.Mash, T.Vorlauf)):
+            ex *= mash_efficiency
+        return ex
+
+class Unfermentable(Ingredient):
+    """Affects gravity, but does not ferment out.
+
+    Parameters
+    ----------
+    ppg : mash.PPG or float
+      The item being added, or the number of gravity points added
+      per pound per gallon (requires `name`).
+    weight : float
+      The weight in pounds.
+    timing : Timing, optional
+      The timing of the addition.
+    name : string, optional
+      Use this name instead of the name in the `PPG` object.  Required
+      if `ppg` is a float.
 
     """
 
@@ -396,6 +466,10 @@ class Wort(MutableSequence):
         return list(filter(lambda v: isinstance(v, Fermentable), self))
     
     @property
+    def unfermentables(self):
+        return list(filter(lambda v: isinstance(v, Unfermentable), self))
+    
+    @property
     def hops(self):
         return list(filter(lambda v: isinstance(v, Hop), self))
 
@@ -403,7 +477,7 @@ class Wort(MutableSequence):
     def hop_stand(self):
         return any([isinstance(hop.timing, T.HopStand) for hop in self.hops])
     
-    def gravity(self, time=T.Final(), volume=None):
+    def gravity(self, time=T.Final(), volume=None, fermentable100=True):
         """Estimate specific gravity.
 
         Parameters
@@ -413,6 +487,8 @@ class Wort(MutableSequence):
           parameter determines which `Fermantable`s are included.
         volume : float, optional
           Use this volume instead of the final wort volume.
+        fermentable100 : bool, optional
+          Set to `False` to exclude 100% fermentables.
 
         Returns
         -------
@@ -425,11 +501,21 @@ class Wort(MutableSequence):
 
         volume = self.volume if volume is None else volume
 
-        fermentables = list(filter(lambda f: f.timing <= time,
-                                   self.fermentables))
+        if fermentable100:
+            fermentables = list(filter(lambda f: f.timing <= time,
+                                       self.fermentables))
+        else:
+            fermentables = list(filter(
+                lambda f: f.timing <= time and not f.fermentable100,
+                self.fermentables))
+            
+        unfermentables = list(filter(lambda f: f.timing <= time,
+                                     self.unfermentables))
         
         total_weight = sum([f.weight for f in fermentables])
+        total_weight += sum([f.weight for f in unfermentables])
         extract = [f.extract(self.efficiency) for f in fermentables]
+        extract += [f.extract(self.efficiency) for f in unfermentables]
         total_extract = sum(extract)
 
         return total_extract / volume / 1000 + 1
@@ -466,20 +552,22 @@ class Wort(MutableSequence):
         kwargs['format'] = kwargs.get('format', _default_format)
         
         total_weight = sum([f.weight for f in self.fermentables])
+        total_weight += sum([f.weight for f in self.unfermentables])
         extract = [f.extract(self.efficiency) for f in self.fermentables]
+        extract += [f.extract(self.efficiency) for f in self.unfermentables]
         total_extract = sum(extract)
         sg = total_extract / self.volume / 1000 + 1
 
         rows = []
-        for f in self.fermentables:
-            if f in self.mash + self.vorlauf:
+        for x in self.fermentables + self.unfermentables:
+            if x in self.mash + self.vorlauf:
                 efficiency = self.efficiency
             else:
                 efficiency = 1.0
 
-            ex = f.extract(efficiency)
-            rows.append([f.name, f.timing.name, f.weight,
-                         f.weight / total_weight, f.ppg, ex,
+            ex = x.extract(efficiency)
+            rows.append([x.name, x.timing.name, x.weight,
+                         x.weight / total_weight, x.ppg, ex,
                          ex / total_extract])
 
         colnames = ['Grain/Adjunct', 'Timing', 'Weight', 'Weight Fraction',
@@ -555,8 +643,13 @@ class Culture:
             bitterness = int(bitterness)
 
         sg = wort.gravity()
-        grain_sg = wort.gravity(time=T.Vorlauf)
-        fg = fermentation.final_gravity(grain_sg, wort.T_sacc, self.culture)
+        grain_sg = wort.gravity(fermentable100=False)
+        fg = fermentation.final_gravity(grain_sg, wort.T_sacc,
+                                        self.culture)
+
+        if len(wort.unfermentables) > 0:
+            w = Wort([x for x in wort if isinstance(x, Unfermentable)])
+            fg += w.gravity() - 1
 
         return Beer(sg, fg, bitterness=bitterness)
 
@@ -650,7 +743,7 @@ class Brew:
     """
 
     def __init__(self, wort, culture, r_mash=1.4, T_rest=[],
-                 mash_out=True, r_boil=1.3, mlt_gap=0.25, kettle_gap=0.5,
+                 mash_out=True, r_boil=0.75, mlt_gap=0.25, kettle_gap=0.5,
                  T_water=200, T_grain=65):
         from collections import Iterable
 
@@ -831,6 +924,9 @@ class Brew:
         kwargs['format'] = kwargs.get('format', _default_format)
 
         grain_weight = sum([g.weight for g in self.wort.mash])
+        if grain_weight == 0:
+            return
+
         T_infusion, v_infusion, v_sparge = self.infusion()
         
         tab = []
