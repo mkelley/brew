@@ -622,7 +622,7 @@ class Culture:
         assert isinstance(culture, CultureBank)
         self.culture = culture
 
-    def ferment(self, wort, bitterness=None):
+    def ferment(self, wort, bitterness=None, attenuation=None):
         """Ferment some wort.
 
         Parameters
@@ -631,6 +631,8 @@ class Culture:
           The wort to ferment.
         bitterness : float, optional
           Beer bitterness in IBU.
+        attenuation : float, optional
+          Use this apparent attentuation percentage.
 
         """
         
@@ -645,8 +647,8 @@ class Culture:
 
         sg = wort.gravity()
         grain_sg = wort.gravity(fermentable100=False)
-        fg = fermentation.final_gravity(grain_sg, wort.T_sacc,
-                                        self.culture)
+        culture = self.culture if attenuation is None else (self.culture.name, attenuation)
+        fg = fermentation.final_gravity(grain_sg, wort.T_sacc, culture)
 
         if len(wort.unfermentables) > 0:
             w = Wort([x for x in wort if isinstance(x, Unfermentable)])
@@ -789,8 +791,13 @@ class Brew:
     def boil_volume(self):
         return self.wort.volume + self.wort.boil_time / 60 * self.r_boil
 
-    def brew(self):
+    def brew(self, attenuation=None):
         """Brew the beer.
+
+        Parameters
+        ----------
+        attenuation : float, optional
+          Use this attenutation percentage for the yeast.
 
         Returns
         -------
@@ -799,7 +806,7 @@ class Brew:
 
         """
 
-        return self.culture.ferment(self.wort)
+        return self.culture.ferment(self.wort, attenuation=attenuation)
 
     def bitterness(self):
         """Beer bitterness.
