@@ -285,31 +285,60 @@ class Spice(Ingredient):
 
 class Fruit(Fermentable):
     """Fermentable fruit forms.
+
+    Adds volume to the wort.  If this is the wrong behavior (e.g., a
+    dried fruit like raisins), set the density to 0?
     
     Parameters
     ----------
     name : string
       The name.
-    ppg : int
-      Gravity points per pound per gallon of wort.
+    sg : float
+      Specific gravity of the fruit.
     weight : float
       Weight in pounds.
     timing : Timing, optional
       The timing of the addition.
-      
+    density : float, optional
+      Density of the fruit, pounds per pint.
+
     """
 
-    def __init__(self, name, ppg, weight, timing=T.Secondary()):
+    def __init__(self, name, sg, weight, timing=T.Secondary(),
+                 density=1.0):
         assert isinstance(name, str)
-        assert isinstance(ppg, (float, int))
+        assert isinstance(sg, float)
         assert isinstance(weight, (float, int))
         assert isinstance(timing, T.Timing)
+        assert isinstance(density, (float, int))
         
         self.name = name
-        self.ppg = int(ppg)
+        self.sg = float(sg)
         self.weight = float(weight)
         self.timing = timing
         self.fermentable100 = False
+        self.density = float(density)
+
+    @property
+    def ppg(self):
+        """1 pound of fruit diluted in 1 gallon of water."""
+        fruit_vol = 1 / self.density / 8  # gal
+        fruit_ex = (self.sg - 1) * 1000 * fruit_vol
+        water_vol = 1.0  # gal
+        ppg = fruit_ex / (fruit_vol + water_vol)
+
+        # but PPG should be an integer, take care with rounding to keep accuracy
+        n, d = ppg.as_integer_ratio()
+        if d == 2:
+            ppg = (n + 1) // 2
+        else:
+            ppg = round(ppg)
+
+        return ppg
+
+    @property
+    def volume(self):
+        return self.weight / self.density / 8
 
 class Other(Ingredient):
     pass
@@ -318,25 +347,33 @@ class Priming(Ingredient):
     pass
 
 class Water(Ingredient):
-    """Water source.
-
-    No volume specified, timing is not applicable.
+    """Water.
 
     Parameters
     ----------
     name : string
-      The name of the water.
+      The name (brief description) of the water.
+    volume : float
+      The volume in gallons.
+    timing : Timing
+      The time of addition.
 
     """
     
-    def __init__(self, name):
+    def __init__(self, name, volume, timing):
         assert isinstance(name, str)
+        assert isinstance(volume, (float, int))
+        assert isinstance(timing, T.Timing)
         self.name = name
-        self.timing = T.Unspecified()
-        self.quantity = ''
+        self.volume = float(volume)
+        self.timing = timing
 
-    def __str__(self):
-        return self.name
+    @property
+    def quantity(self):
+        if self.volume == 0:
+            return ""
+        else:
+            return "{:.2f} gal".format(self.volume)
 
 class Wort(MutableSequence):
     """Make wort with water, malt, adjuncts, hops, etc.
@@ -350,7 +387,8 @@ class Wort(MutableSequence):
     boil_time : float, optional
       The boil time in minutes.
     volume : float, optional
-      The target wort volume in the primary, gallons.
+      The target wort volume in the primary, before any `Primary`
+      additions, gallons.
     T_sacc : int or array-like, optional
       The saccharification temperature step(s).
 
@@ -369,7 +407,7 @@ class Wort(MutableSequence):
         self._list = list(a)
         self.efficiency = efficiency
         self.boil_time = float(boil_time)
-        self.volume = float(volume)
+        self._volume = float(volume)
         self.T_sacc = tuple(T_sacc) if isinstance(T_sacc, Iterable) else (T_sacc,)
 
     def __contains__(self, value):
@@ -465,10 +503,14 @@ class Wort(MutableSequence):
     @property
     def fermentables(self):
         return list(filter(lambda v: isinstance(v, Fermentable), self))
-    
+
     @property
     def unfermentables(self):
         return list(filter(lambda v: isinstance(v, Unfermentable), self))
+    
+    @property
+    def fruits(self):
+        return list(filter(lambda v: isinstance(v, Fruit), self))
     
     @property
     def hops(self):
@@ -477,6 +519,26 @@ class Wort(MutableSequence):
     @property
     def hop_stand(self):
         return any([isinstance(hop.timing, T.HopStand) for hop in self.hops])
+
+    def volume(self, time=T.Final()):
+        """Total volume.
+
+        Parameters
+        ----------
+        time : Timing, optional
+          Volume at this time.
+
+        Returns
+        -------
+        v : float
+          Volume in gallons.
+
+        """
+
+        v = self._volume
+        v += sum([x.volume for x in self
+                  if hasattr(x, 'volume') and x.timing <= time])
+        return v
     
     def gravity(self, time=T.Final(), volume=None, fermentable100=True):
         """Estimate specific gravity.
@@ -500,7 +562,7 @@ class Wort(MutableSequence):
 
         from . import mash
 
-        volume = self.volume if volume is None else volume
+        volume = self.volume() if volume is None else volume
 
         if fermentable100:
             fermentables = list(filter(lambda f: f.timing <= time,
@@ -557,8 +619,7 @@ class Wort(MutableSequence):
         extract = [f.extract(self.efficiency) for f in self.fermentables]
         extract += [f.extract(self.efficiency) for f in self.unfermentables]
         total_extract = sum(extract)
-        sg = total_extract / self.volume / 1000 + 1
-
+        sg = total_extract / self.volume() / 1000 + 1
         rows = []
         for x in self.fermentables + self.unfermentables:
             if x in self.mash + self.vorlauf:
@@ -575,7 +636,7 @@ class Wort(MutableSequence):
                     'PPG', 'Extract', 'Extract Fraction']
         colformats = ['{}', '{}', '{:.3f}', '{:.1%}', '{:d}', '{:.1f}',
                       '{:.1%}']
-        footer = ['Volume: {:.1f} gal'.format(self.volume),
+        footer = ['Volume: {:.1f} gal'.format(self.volume()),
                   'Efficiency: {:.0%}'.format(self.efficiency),
                   'Specific gravity: {:.3f}'.format(sg)]
 
@@ -789,7 +850,8 @@ class Brew:
 
     @property
     def boil_volume(self):
-        return self.wort.volume + self.wort.boil_time / 60 * self.r_boil
+        return (self.wort.volume(T.Boil(self.wort.boil_time))
+                + self.wort.boil_time / 60 * self.r_boil)
 
     def brew(self, attenuation=None):
         """Brew the beer.
