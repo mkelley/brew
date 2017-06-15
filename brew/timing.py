@@ -13,7 +13,7 @@ class Timing(ABC):
         self.time = 'N/A'
 
     def __repr__(self):
-        return "<Timing: {}>".format(name)
+        return "<Timing: {}>".format(self.name)
 
     def __str__(self):
         return self.name
