@@ -1,34 +1,39 @@
 from brew import *
-from brew.timing import Boil, HopStand, Secondary
 
-print('=' * 80)
-wort = Wort([Fermentable(PPG.AmericanTwoRow, 4.5),
-             Fermentable(PPG.WheatMalt, 4.125, name='White wheat malt'),
-             Fermentable(PPG.AmericanCaramel20, 6 / 16, name='Caramel Vienne malt'),
-             Fermentable(PPG.AcidMalt, 2.5 / 16, name='White wheat malt'),
-             Hop('Magnum', 11.5, 0.6, Boil(60)),
-             Hop('Amarillo', 8.5, 0.3, HopStand(30)),
-             Hop('Citra', 13.4, 0.7, HopStand(30)),
-             Hop('Amarillo', 8.5, 1.0, Secondary(7)),
-             Hop('Citra', 13.4, 3.5, Secondary(7)),
+wort = Wort([Fermentable(PPG.AmericanTwoRow, 10),
+             Hop('Cascade', 7.0, 1.0, Boil(60)),
+             Hop('Cascade', 7.0, 0.5, Boil(30)),
+             Hop('Cascade', 7.0, 0.5, Boil(10))
              ])
 yeast = Culture(CultureBank.CaliforniaAle)
 brew = Brew(wort, yeast)
 beer = brew.brew()
 brew.summary()
 beer.summary()
+print('=' * 80)
 
-wort = Wort([Fermentable(PPG.AmericanTwoRow, 4.5),
-             Fermentable(PPG.WheatMalt, 4.125, name='White wheat malt'),
-             Fermentable(PPG.AmericanCaramel20, 6 / 16, name='Caramel Vienne malt'),
-             Fermentable(PPG.AcidMalt, 2.5 / 16, name='White wheat malt'),
-             Hop('Magnum', 11.5, 0.7, Boil(60)),
-             Hop('Amarillo', 8.5, 1.3, HopStand(30)),
-             Hop('Citra', 13.4, 0.8, HopStand(30)),
-             Hop('Amarillo', 8.5, 0.7, Secondary(7)),
-             Hop('Citra', 13.4, 3.5, Secondary(7)),
-             ], volume=5.75, boil_time=70, efficiency=0.76)
-yeast = Culture(CultureBank.CaliforniaAle)
+brew.wort.append(Fruit('Mango puree', 1.070, 5))
+beer = brew.brew()
+brew.summary()
+beer.summary()
+print('=' * 80)
+
+wort = Wort([Fermentable(PPG.MarisOtter, 6.5),
+             Fermentable(PPG.OatsFlaked, 1),
+             Fermentable(PPG.EnglishCrystal60_70, 0.5),
+             Fermentable(PPG.Black, 0.5, name='Carafa II'),
+             Hop('UK Target', 10, 0.25, Boil(60)),
+             Hop('UK Target', 10, 0.125, Boil(20)),
+             Spice('Cinnamon', '6 sticks', Packaging()),
+             Spice('Allspice, whole (ground)', '1 tablespoon', Packaging()),
+             Spice('Nutmeg, whole (ground)', '1 tablespoon', Packaging()),
+             Spice('Cloves, whole (ground)', '2 teaspoons', Packaging()),
+             Spice('Ginger, dried, ground', '1/2 tablespoon', Packaging()),
+             Spice('Tincture of orange zest', 'from 2 Valencia oranges extracted with 2 oz vodka', Packaging()),
+             Water('Filtered WSSC tap', 0, Unspecified()),
+             Priming('Table sugar', '2.1 oz', Packaging()),
+             ], efficiency=0.64, T_sacc=154)
+yeast = Culture(CultureBank.DryEnglishAle)
 brew = Brew(wort, yeast)
 beer = brew.brew()
 brew.summary()
