@@ -309,6 +309,7 @@ class Fruit(Fermentable):
         self.ppg = int(ppg)
         self.weight = float(weight)
         self.timing = timing
+        self.fermentable100 = False
 
 class Other(Ingredient):
     pass
