@@ -39,6 +39,7 @@ class CultureBank(Enum):
     FlemishAleBlend = ('WLP665, Flemish Ale Blend', 80, 100)
     AmericanFarmhouseBlend = ('WLP670, American Farmhouse Blend', 75, 82)
     AmericanAle = ('US-05, American Ale', 81, 81)
+    HouseSourMix = ('House sour mix', 86, 86)
 
 def abv(og, fg):
     """Alcohol by volume.
