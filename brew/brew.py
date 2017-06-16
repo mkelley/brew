@@ -672,16 +672,18 @@ class Culture:
 
     Parameters
     ----------
-    culture : CultureBank
-      The type of culture to propagate.
+    cultures : CultureBank
+      The type of culture(s) to propagate.
     
     """
 
-    def __init__(self, culture):
+    def __init__(self, *cultures):
         from .fermentation import CultureBank
 
-        assert isinstance(culture, CultureBank)
-        self.culture = culture
+        self.cultures = []
+        for culture in cultures:
+            assert isinstance(culture, CultureBank)
+            self.cultures.append(culture)
 
     def ferment(self, wort, bitterness=None, attenuation=None):
         """Ferment some wort.
@@ -708,8 +710,13 @@ class Culture:
 
         sg = wort.gravity()
         grain_sg = wort.gravity(fermentable100=False)
-        culture = self.culture if attenuation is None else (self.culture.name, attenuation)
-        fg = fermentation.final_gravity(grain_sg, wort.T_sacc, culture)
+        fg = grain_sg
+        if attenuation is None:
+            for culture in self.cultures:
+                g = fermentation.final_gravity(grain_sg, wort.T_sacc, culture)
+                fg = g if g < fg else fg
+        else:
+            fg = fermentation.final_gravity(grain_sg, 152, ('', attenuation))
 
         if len(wort.unfermentables) > 0:
             w = Wort([x for x in wort if isinstance(x, Unfermentable)])
