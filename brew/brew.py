@@ -828,7 +828,7 @@ class Brew:
         assert isinstance(kettle_gap, (float, int))
         assert isinstance(T_water, (int, float))
         assert isinstance(T_grain, (int, float))
-
+        
         self.wort = wort
         self.culture = culture
         self.r_mash = float(r_mash)
@@ -912,7 +912,7 @@ class Brew:
         from .util import rows2tab
         from . import mash
 
-        grain_weight = sum([g.weight for g in self.wort.mash])
+        grain_weight = sum([g.weight for g in self.wort.mash if hasattr(g, 'weight')])
 
         v_infusion = []
         T_infusion = []
@@ -1000,7 +1000,7 @@ class Brew:
         
         kwargs['format'] = kwargs.get('format', _default_format)
 
-        grain_weight = sum([g.weight for g in self.wort.mash])
+        grain_weight = sum([g.weight for g in self.wort.mash if hasattr(g, 'weight')])
         if grain_weight == 0:
             return
 
