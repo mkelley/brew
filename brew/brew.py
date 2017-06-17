@@ -716,7 +716,8 @@ class Culture:
         self.culture = culture
         self.quantity = quantity
         self.timing = timing
-        self.desc = culture.value[0] if desc is None else desc
+        self.name = self.culture.value[0]
+        self.desc = self.name if desc is None else desc
 
     def ferment(self, wort, bitterness=None, attenuation=None):
         """Ferment some wort.
@@ -1090,8 +1091,12 @@ Sparge with {:.1f} gal of water
         rows = []
         for i in list(self.wort) + self.culture:
             t = '' if isinstance(i.timing, T.Unspecified) else str(i.timing)
-            rows.append([str(i.quantity), str(i.desc), t])
+            if _default_format == 'html':
+                item = i.desc
+            else:
+                item = i.name
 
-        colnames = ['Quantity', 'Item', 'Timing']
+            rows.append([type(i).__name__, str(i.quantity), item, t])
+
+        colnames = ['Type', 'Quantity', 'Item', 'Timing']
         ingredients = rows2tab(rows, colnames, verbose=True, **kwargs)
-
