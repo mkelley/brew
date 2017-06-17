@@ -61,10 +61,12 @@ class Ingredient:
       The amount of the ingredient as a string.
     timing : Timing, optional
       When to add it.
+    desc : string, optional
+      A long-form description of the ingredient.
 
     """
     
-    def __init__(self, name, quantity, timing=T.Boil(60)):
+    def __init__(self, name, quantity, timing=T.Boil(60), desc=None):
         assert isinstance(name, str)
         assert isinstance(quantity, str)
         self.name = name
@@ -92,17 +94,19 @@ class Fermentable(Ingredient):
     name : string, optional
       Use this name instead of the name in the `PPG` object.  Required
       if `ppg` is a float.
+    desc : string, optional
+      A long-form description.
 
     """
 
-    def __init__(self, ppg, weight, timing=T.Mash(), name=None):
+    def __init__(self, ppg, weight, timing=T.Mash(), name=None, desc=None):
         from . import mash
 
         assert isinstance(ppg, (mash.PPG, float, int))
         assert isinstance(weight, (float, int))
         assert isinstance(timing, T.Timing)
-        if name is not None:
-            assert isinstance(name, str)
+        assert isinstance(name, (str, type(None)))
+        assert isinstance(desc, (str, type(None)))
 
         if isinstance(ppg, mash.PPG):
             self.name, self.ppg, self.fermentable100 = ppg.value
@@ -115,6 +119,7 @@ class Fermentable(Ingredient):
 
         self.weight = float(weight)
         self.timing = timing
+        self.desc = desc
 
     def __str__(self):
         return "{} ({:d} PPG), {} at {}".format(
@@ -149,17 +154,19 @@ class Unfermentable(Ingredient):
     name : string, optional
       Use this name instead of the name in the `PPG` object.  Required
       if `ppg` is a float.
+    desc : string, optional
+      A long-form description.
 
     """
 
-    def __init__(self, ppg, weight, timing=T.Mash(), name=None):
+    def __init__(self, ppg, weight, timing=T.Mash(), name=None, desc=None):
         from . import mash
 
         assert isinstance(ppg, (mash.PPG, float, int))
         assert isinstance(weight, (float, int))
         assert isinstance(timing, T.Timing)
-        if name is not None:
-            assert isinstance(name, str)
+        assert isinstance(name, (str, type(None)))
+        assert isinstance(desc, (str, type(None)))
 
         if isinstance(ppg, mash.PPG):
             self.name, self.ppg = ppg.value
@@ -172,6 +179,7 @@ class Unfermentable(Ingredient):
 
         self.weight = float(weight)
         self.timing = timing
+        self.desc = desc
 
     def __str__(self):
         return "{} ({:d} PPG), {} at {}".format(
@@ -206,21 +214,26 @@ class Hop(Ingredient):
       The timing of the addition.
     kind : bool, optional
       Set to `True` for whole leaf hops, `False` for pellets.
-    
+    desc : string, optional
+      A long-form description.
+
     """
 
-    def __init__(self, name, alpha, weight, timing=None, whole=False):
+    def __init__(self, name, alpha, weight, timing=None, whole=False,
+                 desc=None):
         assert isinstance(name, str)
         assert isinstance(alpha, (float, int))
         assert isinstance(weight, (float, int))
         assert isinstance(timing, T.Timing)
         assert isinstance(whole, bool)
+        assert isinstance(desc, (str, type(None)))
 
         self.name = name
         self.alpha = alpha
         self.weight = weight
         self.timing = timing
         self.whole = whole
+        self.desc = desc
 
     def __repr__(self):
         return '<Hop: {}>'.format(str(self))
@@ -301,23 +314,27 @@ class Fruit(Fermentable):
       The timing of the addition.
     density : float, optional
       Density of the fruit, pounds per pint.
+    desc : string, optional
+      A long-form description.
 
     """
 
     def __init__(self, name, sg, weight, timing=T.Secondary(),
-                 density=1.0):
+                 density=1.0, desc=None):
         assert isinstance(name, str)
         assert isinstance(sg, float)
         assert isinstance(weight, (float, int))
         assert isinstance(timing, T.Timing)
         assert isinstance(density, (float, int))
-        
+        assert isinstance(desc, (str, type(None)))
+
         self.name = name
         self.sg = float(sg)
         self.weight = float(weight)
         self.timing = timing
         self.fermentable100 = False
         self.density = float(density)
+        self.desc = desc
 
     @property
     def ppg(self):
@@ -357,16 +374,21 @@ class Water(Ingredient):
       The volume in gallons.
     timing : Timing
       The time of addition.
+    desc : string, optional
+      A long-form description.
 
     """
     
-    def __init__(self, name, volume, timing):
+    def __init__(self, name, volume, timing, desc=None):
         assert isinstance(name, str)
         assert isinstance(volume, (float, int))
         assert isinstance(timing, T.Timing)
+        assert isinstance(desc, (str, type(None)))
+
         self.name = name
         self.volume = float(volume)
         self.timing = timing
+        self.desc = desc
 
     @property
     def quantity(self):
@@ -674,16 +696,17 @@ class Culture:
     ----------
     cultures : CultureBank
       The type of culture(s) to propagate.
+    desc : string, optional
+      A long-form description.
     
     """
 
-    def __init__(self, *cultures):
+    def __init__(self, culture, desc=None):
         from .fermentation import CultureBank
-
-        self.cultures = []
-        for culture in cultures:
-            assert isinstance(culture, CultureBank)
-            self.cultures.append(culture)
+        assert culture in CultureBank
+        assert isinstance(desc, (str, type(None)))
+        self.culture = culture
+        self.desc = desc
 
     def ferment(self, wort, bitterness=None, attenuation=None):
         """Ferment some wort.
@@ -712,9 +735,7 @@ class Culture:
         grain_sg = wort.gravity(fermentable100=False)
         fg = grain_sg
         if attenuation is None:
-            for culture in self.cultures:
-                g = fermentation.final_gravity(grain_sg, wort.T_sacc, culture)
-                fg = g if g < fg else fg
+            fg = fermentation.final_gravity(grain_sg, wort.T_sacc, self.culture)
         else:
             fg = fermentation.final_gravity(grain_sg, 152, ('', attenuation))
 
@@ -819,7 +840,7 @@ class Brew:
         from collections import Iterable
 
         assert isinstance(wort, Wort)
-        assert isinstance(culture, Culture)
+        assert isinstance(culture, (Culture, Iterable))
         assert isinstance(r_mash, (float, int))
         assert isinstance(T_rest, (int, float, Iterable))
         assert isinstance(mash_out, bool)
@@ -874,8 +895,20 @@ class Brew:
           The final product.
 
         """
+        
+        from collections import Iterable
+        
+        # if a mixed fermentation, report the beer with the greatest attenuation
+        if isinstance(self.culture, Iterable):
+            beer = []
+            for culture in self.culture:
+                beer.append(culture.ferment(self.wort, attenuation=attenuation))
 
-        return self.culture.ferment(self.wort, attenuation=attenuation)
+            a = [b.app_attenuation for b in beer]
+            i = a.index(max(a))
+            return beer[i]
+        else:
+            return self.culture.ferment(self.wort, attenuation=attenuation)
 
     def bitterness(self):
         """Beer bitterness.
