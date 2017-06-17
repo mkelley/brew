@@ -1096,7 +1096,7 @@ Sparge with {:.1f} gal of water
             else:
                 item = i.name
 
-            rows.append([type(i).__name__, str(i.quantity), item, t])
+            rows.append([str(i.quantity), item, t])
 
-        colnames = ['Type', 'Quantity', 'Item', 'Timing']
+        colnames = ['Quantity', 'Item', 'Timing']
         ingredients = rows2tab(rows, colnames, verbose=True, **kwargs)
