@@ -23,6 +23,7 @@ __all__ = [
     'Culture',
     'Beer',
     'Brew',
+    'set_format'
 ]
 
 _default_format = 'text'  # default format for summaries
@@ -66,13 +67,14 @@ class Ingredient:
 
     """
     
-    def __init__(self, name, quantity, timing=T.Boil(60), desc=None):
+    def __init__(self, name, quantity, timing=T.Unspecified(), desc=None):
         assert isinstance(name, str)
         assert isinstance(quantity, str)
         self.name = name
         self.quantity = quantity
         self.timing = timing
-
+        self.desc = name if desc is None else desc
+        
     def __repr__(self):
         return "<{}: {}>".format(type(self).__name__, str(self))
 
@@ -119,7 +121,7 @@ class Fermentable(Ingredient):
 
         self.weight = float(weight)
         self.timing = timing
-        self.desc = desc
+        self.desc = name if desc is None else desc
 
     def __str__(self):
         return "{} ({:d} PPG), {} at {}".format(
@@ -179,7 +181,7 @@ class Unfermentable(Ingredient):
 
         self.weight = float(weight)
         self.timing = timing
-        self.desc = desc
+        self.desc = name if desc is None else desc
 
     def __str__(self):
         return "{} ({:d} PPG), {} at {}".format(
@@ -233,7 +235,7 @@ class Hop(Ingredient):
         self.weight = weight
         self.timing = timing
         self.whole = whole
-        self.desc = desc
+        self.desc = name if desc is None else desc
 
     def __repr__(self):
         return '<Hop: {}>'.format(str(self))
@@ -334,7 +336,7 @@ class Fruit(Fermentable):
         self.timing = timing
         self.fermentable100 = False
         self.density = float(density)
-        self.desc = desc
+        self.desc = name if desc is None else desc
 
     @property
     def ppg(self):
@@ -388,7 +390,7 @@ class Water(Ingredient):
         self.name = name
         self.volume = float(volume)
         self.timing = timing
-        self.desc = desc
+        self.desc = name if desc is None else desc
 
     @property
     def quantity(self):
@@ -696,17 +698,25 @@ class Culture:
     ----------
     cultures : CultureBank
       The type of culture(s) to propagate.
+    quantity : string, optional
+      The quantity of the culture.
+    timing : Timing, optional
+      The timing of the addition.
     desc : string, optional
       A long-form description.
     
     """
 
-    def __init__(self, culture, desc=None):
+    def __init__(self, culture, quantity='1', timing=T.Primary(), desc=None):
         from .fermentation import CultureBank
         assert culture in CultureBank
+        assert isinstance(quantity, str)
+        assert isinstance(timing, T.Timing)
         assert isinstance(desc, (str, type(None)))
         self.culture = culture
-        self.desc = desc
+        self.quantity = quantity
+        self.timing = timing
+        self.desc = culture.value[0] if desc is None else desc
 
     def ferment(self, wort, bitterness=None, attenuation=None):
         """Ferment some wort.
@@ -851,7 +861,10 @@ class Brew:
         assert isinstance(T_grain, (int, float))
         
         self.wort = wort
-        self.culture = culture
+        if isinstance(culture, Iterable):
+            self.culture = list(culture)
+        else:
+            self.culture = [culture]
         self.r_mash = float(r_mash)
         self.T_rest = tuple(T_rest) if isinstance(T_rest, Iterable) else (T_rest)
         self.mash_out = mash_out
@@ -968,8 +981,9 @@ class Brew:
         return T_infusion, v_infusion, v_sparge / 4
 
     def summary(self, **kwargs):
-        """Summarize wort, infusion, and bitterness."""
-        self.wort.summary(**kwargs)
+        """Summarize ingredients, wort, infusion, and bitterness."""
+        self.summarize_ingredients(**kwargs)
+        self.wort.summarize_extract(**kwargs)
         self.summarize_infusion(**kwargs)
         self.summarize_bitterness(**kwargs)
 
@@ -1056,4 +1070,28 @@ Sparge with {:.1f} gal of water
 
         tab = rows2tab(tab, columns, footer, colformats=colformats,
                        verbose=True, **kwargs)
+
+    def summarize_ingredients(self, **kwargs):
+        """Summarize ingredients.
+
+        Parameters
+        ----------
+        format : string, optional
+          Output format: 'text', 'html', 'notebook'.
+        **kwargs
+          Keyword arguments for `rows2tab`.
+
+        """
+
+        from .util import rows2tab
+        
+        kwargs['format'] = kwargs.get('format', _default_format)
+
+        rows = []
+        for i in list(self.wort) + self.culture:
+            t = '' if isinstance(i.timing, T.Unspecified) else str(i.timing)
+            rows.append([str(i.quantity), str(i.desc), t])
+
+        colnames = ['Quantity', 'Item', 'Timing']
+        ingredients = rows2tab(rows, colnames, verbose=True, **kwargs)
 
