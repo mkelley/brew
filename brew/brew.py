@@ -547,6 +547,9 @@ class Wort(MutableSequence):
     def volume(self, time=T.Final()):
         """Total volume.
 
+        Considers wort volume (post-boil) and any additions
+        thereafter.
+
         Parameters
         ----------
         time : Timing, optional
@@ -571,9 +574,10 @@ class Wort(MutableSequence):
         ----------
         time : Timing, optional
           The epoch at which the gravity should be estimated.  This
-          parameter determines which `Fermantable`s are included.
+          parameter determines volume and which `Fermantable`s are
+          included.
         volume : float, optional
-          Use this volume instead of the final wort volume.
+          Use this volume instead of `volume(time)`.
         fermentable100 : bool, optional
           Set to `False` to exclude 100% fermentables.
 
@@ -586,7 +590,7 @@ class Wort(MutableSequence):
 
         from . import mash
 
-        volume = self.volume() if volume is None else volume
+        volume = self.volume(time=time) if volume is None else volume
 
         if fermentable100:
             fermentables = list(filter(lambda f: f.timing <= time,
@@ -887,13 +891,20 @@ class Brew:
 
     @property
     def boil_gravity(self):
+        """At the start of the boil."""
         return self.wort.gravity(time=T.Boil(self.wort.boil_time),
                                  volume=self.boil_volume)
 
     @property
     def boil_volume(self):
+        """At the start of the boil."""
         return (self.wort.volume(T.Boil(self.wort.boil_time))
                 + self.wort.boil_time / 60 * self.r_boil)
+
+    @property
+    def post_boil_gravity(self):
+        """At the end of the boil."""
+        return self.wort.gravity(time=T.Boil(0))
 
     def brew(self, attenuation=None):
         """Brew the beer.
@@ -1026,7 +1037,8 @@ class Brew:
                       '{:.0f}']
 
         footer = ['Boil specific gravity: {:.3f}'.format(self.boil_gravity),
-                  'Boil volume: {} gal'.format(self.boil_volume)]
+                  'Boil volume: {} gal'.format(self.boil_volume),
+                  'Post-boil specific gravity: {:.3f}'.format(self.post_boil_gravity)]
         if self.wort.hop_stand:
             footer += ['Hop stand']
         footer += ['Total bitterness: {:.0f} IBU'.format(sum(bit))]
