@@ -1037,6 +1037,10 @@ class Brew:
         util = [row[-2] for row in tab]
         bit = [row[-1] for row in tab]
 
+        v = self.wort.volume(T.Boil(0))
+        v_final = self.wort.volume()
+        bit_final = sum(bit) * v / v_final
+
         colnames = ['Hop', 'Type', 'Alpha', 'Weight', 'Time', 'Utilization',
                     'Bitterness']
         colformats = ['{}', '{}', '{:.1f}', '{:.1f}', '{:.0f}', '{:.1f}',
@@ -1047,7 +1051,8 @@ class Brew:
                   'Post-boil specific gravity: {:.3f}'.format(self.post_boil_gravity)]
         if self.wort.hop_stand:
             footer += ['Hop stand']
-        footer += ['Total bitterness: {:.0f} IBU'.format(sum(bit))]
+        footer += ['Post-boil bitterness: {:.0f} IBU'.format(sum(bit))]
+        footer += ['Final bitterness: {:.0f} IBU'.format(bit_final)]
 
         tab = rows2tab(tab, colnames, ',\n'.join(footer),
                        colformats=colformats, verbose=True, **kwargs)
