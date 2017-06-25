@@ -249,17 +249,19 @@ class Hop(Ingredient):
         return "{:.2f} oz".format(self.weight)
     
     def bitterness(self, gravity, volume, boil=None, hop_stand=False):
-        """Compute bitterness contribution.
+        """Compute bitterness.
+
+        John Palmer's How to Brew suggests initial gravity is OK.
 
         Parameters
         ----------
         gravity : float
-          The gravity of the boil.
+          The gravity of the boil at the start.
         volume : float
           The post-boil volume in gallons.
         boil : float, optional
-          The length of the boil.  Required for mash and first_wort
-          hops.  Bitterness calculation uses `boil + 5`.
+          The length of the boil.  Required for mash and first wort
+          hops.
         hop_stand : bool, optional
           Set to `True` if there is a hop stand after the boil.  If
           so, any boil contributions within the last 5 minutes will be
@@ -948,7 +950,7 @@ class Brew:
         bitterness = 0
         for hop in self.wort.hops:
             bitterness += hop.bitterness(self.boil_gravity,
-                                         self.boil_volume,
+                                         self.post_boil_volume,
                                          boil=self.wort.boil_time,
                                          hop_stand=self.wort.hop_stand)
         return bitterness
