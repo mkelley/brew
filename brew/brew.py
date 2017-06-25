@@ -1085,7 +1085,7 @@ class Brew:
         #v_wort = v_mash + v_sparge - 0.125 * grain_weight - self.mlt_gap
 
         footer = '''Total mash water: {:.1f} gal ({:.1f} qt/lb),
-Sparge with {:.1f} gal of water
+Sparge with {:.1f} gal of water,
 Collect {:.1f} gal of wort
 '''.format(v_mash, v_mash * 4 / grain_weight, v_sparge, self.boil_volume)
 
