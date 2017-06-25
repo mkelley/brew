@@ -549,13 +549,15 @@ class Wort(MutableSequence):
     def volume(self, time=T.Final()):
         """Total volume.
 
-        Considers wort volume (post-boil) and any additions
+        Considers wort volume in the primary and any additions
         thereafter.
 
         Parameters
         ----------
         time : Timing, optional
-          Volume at this time.
+          Volume at this time.  Times before `Timing.Primary` exclude
+          primary additions, but do not account for any losses in the
+          brew-day process, e.g., the kettle volume gap.
 
         Returns
         -------
@@ -852,7 +854,7 @@ class Brew:
     """
 
     def __init__(self, wort, culture, r_mash=1.4, T_rest=[],
-                 mash_out=True, r_boil=0.75, mlt_gap=0.25, kettle_gap=0.5,
+                 mash_out=True, r_boil=1.0, mlt_gap=0.25, kettle_gap=0.5,
                  T_water=200, T_grain=65):
         from collections import Iterable
 
@@ -894,14 +896,17 @@ class Brew:
     @property
     def boil_gravity(self):
         """At the start of the boil."""
-        return self.wort.gravity(time=T.Boil(self.wort.boil_time),
-                                 volume=self.boil_volume)
+        v = self.wort.gravity(time=T.Boil(self.wort.boil_time),
+                              volume=self.boil_volume)
+        return v
 
     @property
     def boil_volume(self):
         """At the start of the boil."""
-        return (self.wort.volume(T.Boil(self.wort.boil_time))
-                + self.wort.boil_time / 60 * self.r_boil)
+        v = (self.wort.volume(T.Boil(0))
+             + self.wort.boil_time / 60 * self.r_boil
+             + self.kettle_gap)
+        return v
 
     @property
     def post_boil_gravity(self):
@@ -989,10 +994,9 @@ class Brew:
                 T_infusion.append(self.T_water)
 
         v_mash = sum(v_infusion)
-        v_sparge = (self.boil_volume - v_mash + 0.125 * grain_weight
-                    + self.mlt_gap + self.wort.boil_time / 60 * self.r_boil)
+        v_sparge = self.boil_volume - v_mash + self.mlt_gap + 0.125 * grain_weight
 
-        return T_infusion, v_infusion, v_sparge / 4
+        return T_infusion, v_infusion, v_sparge
 
     def summary(self, **kwargs):
         """Summarize ingredients, wort, infusion, and bitterness."""
@@ -1073,12 +1077,12 @@ class Brew:
             tab.append([self.T_mash[i], T_infusion[i], v_infusion[i]])
 
         v_mash = sum(v_infusion)
-        v_sparge = (self.boil_volume - v_mash + 0.125 * grain_weight
-                    + self.mlt_gap + self.wort.boil_time / 60 * self.r_boil)
+        #v_wort = v_mash + v_sparge - 0.125 * grain_weight - self.mlt_gap
 
         footer = '''Total mash water: {:.1f} gal ({:.1f} qt/lb),
 Sparge with {:.1f} gal of water
-'''.format(v_mash, v_mash * 4 / grain_weight, v_sparge)
+Collect {:.1f} gal of wort
+'''.format(v_mash, v_mash * 4 / grain_weight, v_sparge, self.boil_volume)
 
         columns = ['T mash (F)', 'T water (F)', 'Volume (gal)']
         colformats = ['{:.0f}', '{:.0f}', '{:.2f}']
