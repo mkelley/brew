@@ -28,6 +28,17 @@ def correct_sg(sg, T):
                  + 2.04052596e-6 * T**2
                  - 2.32820948e-9 * T**3)
 
+def refractometer_fg(sg0, sg_r):
+    """Correct final gravity measurment from refractometer.
+
+    sg0 : float
+      Starting specific gravity.
+
+    sg_r : float
+      Raw (uncorrected) specific gravity measurement from refractometer.
+    """
+    return 1 - 0.002349 * sg2brix(sg0) + 0.006276 * sg2brix(sg_r)
+
 def sg2plato(sg):
     """Extract in degrees Plato.
 

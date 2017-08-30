@@ -27,6 +27,7 @@ class CultureBank(Enum):
     BelgianStyleSaison = ('WLP568, Belgian Style Saison', 70, 80)
     BelgianGoldenAle = ('WLP570, Belgian Golden Ale', 73, 78)
     BelgianSaisonIII = ('WLP585, Belgian Saison III', 70, 74)
+    TrappistHighGravity = ('WY3787, Trappist Style High Gravity', 74, 78)
     FrenchSaisonWhiteLabs = ('WLP590, French Saison', 73, 80)
     FrenchSaisonWyeast = ('WY3711, French Saison', 77, 83)
     SanFranciscoLager = ('WLP810, San Francisco Lager', 65, 70)

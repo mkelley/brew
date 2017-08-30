@@ -909,6 +909,13 @@ class Brew:
         return v
 
     @property
+    def post_boil_volume(self):
+        """At the end of the boil."""
+        v = (self.wort.volume(T.Boil(0))
+             + self.kettle_gap)
+        return v
+
+    @property
     def post_boil_gravity(self):
         """At the end of the boil."""
         return self.wort.gravity(time=T.Boil(0))
@@ -1048,6 +1055,7 @@ class Brew:
 
         footer = ['Boil specific gravity: {:.3f}'.format(self.boil_gravity),
                   'Boil volume: {} gal'.format(self.boil_volume),
+                  'Post-boil volume: {} gal'.format(self.post_boil_volume),
                   'Post-boil specific gravity: {:.3f}'.format(self.post_boil_gravity)]
         if self.wort.hop_stand:
             footer += ['Hop stand']

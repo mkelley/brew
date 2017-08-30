@@ -77,6 +77,8 @@ class PPG(Enum):
     BelgianCandiSugar = "Belgian candi sugar", 46, True
     BelgianCandiSyrup = "Belgian candi syrup", 36, True
     CaneSugar = "Cane sugar", 46, True
+    TableSugar = "Table sugar", 46, True
+    TurbinadoSugar = "Turbinado sugar", 46, True
     LightBrownSugar = "Light brown sugar", 46, True
     DarkBrownSugar = "Dark brown sugar", 46, True
     CornSugarDextrose = "Corn sugar (dextrose)", 46, True
