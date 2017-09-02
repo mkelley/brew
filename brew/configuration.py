@@ -26,6 +26,7 @@ config_default = OrderedDict(
      ('mlt_gap', 0.25),
      ('boil_time', 60),
      ('r_boil', 1.0),
+     ('hop_stand', False),
      ('kettle_gap', 0.5),
     )
 )

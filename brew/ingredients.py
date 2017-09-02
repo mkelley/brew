@@ -173,6 +173,7 @@ class Culture:
         self.quantity = quantity
         self.timing = timing
         self.name = self.culture.value[0]
+        self.attenuation = (self.culture.value[1], self.culture.value[2])
         self.desc = self.name if desc is None else desc
 
 class Ingredient:
@@ -346,7 +347,7 @@ class Hop(Ingredient):
       The weight of the addition in ounces.
     timing : Timing, optional
       The timing of the addition.
-    kind : bool, optional
+    whole : bool, optional
       Set to `True` for whole leaf hops, `False` for pellets.
     desc : string, optional
       A long-form description.
@@ -408,7 +409,7 @@ class Hop(Ingredient):
 
         """
 
-        from . import hops
+        from .util import ibu, utilization
 
         assert isinstance(gravity, float)
         assert isinstance(volume, (float, int))
@@ -424,8 +425,8 @@ class Hop(Ingredient):
         else:
             return 0, 0
 
-        util = hops.utilization(t, gravity, whole=self.whole)
-        bit = hops.ibu(util, self.weight, self.alpha, volume)
+        util = utilization(t, gravity, whole=self.whole)
+        bit = ibu(util, self.weight, self.alpha, volume)
 
         return util, bit
 
@@ -546,7 +547,6 @@ class Ingredients(MutableSequence):
 
     def __init__(self, a=[]):
         from collections import Iterable
-
         assert isinstance(a, Iterable)
         self._list = list(a)
 
@@ -689,7 +689,7 @@ class Ingredients(MutableSequence):
     @property
     def hops(self):
         return Ingredients(list(filter(lambda v: isinstance(v, Hop), self)))
-
+    
     @property
-    def hop_stand(self):
-        return Ingredients(any([isinstance(hop.timing, T.HopStand) for hop in self.hops]))
+    def cultures(self):
+        return Ingredients(list(filter(lambda v: isinstance(v, Culture), self)))

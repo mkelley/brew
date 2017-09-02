@@ -10,7 +10,7 @@ ingredients = Ingredients([
 ])
 
 brew = b.Brew(ingredients, 5.0)
-brew.mash()
+brew.ferment()
 
 #wort = Wort([Fermentable(PPG.AmericanTwoRow, 10),
 #             Hop('Cascade', 7.0, 1.0, Boil(60)),

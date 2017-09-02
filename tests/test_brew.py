@@ -47,7 +47,7 @@ class TestBrew:
             b.Hop('Czech Saaz', 3.0, 2.0, b.Boil(60)),
             b.Hop('German Hallertau', 6.0, 0.5, b.Boil(10)),
             b.Fermentable(b.PPG.TableSugar, 1, timing=b.Primary()),
-            b.Culture(b.CultureBank.CaliforniaAle)
+            b.Culture(b.CultureBank.AbbeyAle)
         ])
         
         brew = b.Brew(ingredients, 5.0, efficiency=0.75)
@@ -57,3 +57,23 @@ class TestBrew:
 
         # + 46
         assert int(sum(brew.extract(b.Final()))) == int(323.5)
+
+    def test_boil(self):
+        ingredients = b.Ingredients([
+            b.Fermentable(b.PPG.AmericanTwoRow, 10),
+            b.Hop('Cascade', 7.0, 1.0, b.Boil(60)),
+            b.Culture(b.CultureBank.CaliforniaAle)
+        ])
+
+        brew = b.Brew(ingredients, 5.0, efficiency=0.75, kettle_gap=0.5,
+                      r_boil=1.0, boil_time=60)
+        wort = brew.boil()
+
+        # util = 1.65 * 0.000125**(1.046 - 1) * (1 - exp(-0.04 * 60)) / 4.15
+        # ibu = 0.746 * util * 100 * 1.0 * 7.0 / 5.5
+        assert int(wort.bitterness) == int(22.7)
+
+        brew.ingredients[1].whole = True
+        wort = brew.boil()
+        assert int(wort.bitterness) == int(22.7 * 0.85)
+        
