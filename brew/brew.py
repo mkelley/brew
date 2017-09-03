@@ -246,8 +246,10 @@ class Brew:
 
         from . import timing as T
         from .table import Table
+        from .ingredients import Ingredients, Fermentable, Unfermentable
+        from . import _default_format
 
-        ingredients = self.ingredients.at(T.Lauter())
+        ingredients = Ingredients([f for f in self.ingredients.at(T.Lauter()) if isinstance(f, (Fermentable, Unfermentable))])
         total_weight = sum([f.weight for f in ingredients])
         grain_weight = sum([f.weight for f in ingredients.grains])
 
@@ -271,7 +273,8 @@ class Brew:
                           [ex / total_extract for ex in extract]),
                     names=('Grain/Adjunct', 'Timing', 'Weight',
                            'Weight Fraction', 'PPG', 'Extract',
-                           'Extract Fraction'))
+                           'Extract Fraction'),
+                    format=_default_format)
         tab.colformats = ('{}', '{}', '{:.3f}', '{:.1%}', '{:d}', '{:.1f}',
                           '{:.1%}')
         tab.footer = '''Kettle volume: {:.1f} gal
@@ -283,7 +286,8 @@ Pre-boil specific gravity: {:.3f}
         
         # Infusion schedule table
         tab = Table(data=(self.T_mash, T_infusion, v_infusion),
-                    names=('T mash (F)', 'T water (F)', 'Volume (gal)'))
+                    names=('T mash (F)', 'T water (F)', 'Volume (gal)'),
+                    format=_default_format)
         tab.colformats = ('{:.0f}', '{:.0f}', '{:.2f}')
         tab.footer = '''Total mash water: {:.1f} gal ({:.1f} qt/lb)
 Sparge with {:.1f} gal of water
@@ -315,7 +319,8 @@ Collect {:.1f} gal of wort
 
         from . import timing as T
         from .table import Table
-
+        from . import _default_format
+        
         if wort is None:
             wort = self.mash()
         
@@ -349,7 +354,8 @@ Collect {:.1f} gal of wort
                   util,
                   bit),
             names=('Hop', 'Type', 'Alpha', 'Weight', 'Time', 'Utilization',
-                   'Bitterness'))
+                   'Bitterness'),
+            format=_default_format)
         tab.colformats = ('{}', '{}', '{:.1f}', '{:.1f}', '{}', '{:.1f}',
                           '{:.0f}')
         tab.footer = '''Pre-boil volume: {} gal
