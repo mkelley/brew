@@ -48,7 +48,7 @@ class Table:
             formatted_tab.append(formatted_row)
 
         tab = ''
-        if format in ['html', 'notebook']:
+        if self.format in ['html', 'notebook']:
             thead = '<tr><th>' + '</th><th>'.join(self.names) + '</th></tr>'
             tbody = ['<tr><td>' + '</td><td>'.join(row) + '</td></tr>'
                      for row in formatted_tab]
@@ -62,7 +62,7 @@ class Table:
                 tab += """
   <tfoot>
     <tr><td colspan="{ncols}">{tfoot}</td></tr>
-  </tfoot>""".format(ncols=ncols, tfoot=self.footer)
+  </tfoot>""".format(ncols=ncols, tfoot=self.footer.replace('\n', '<br/>'))
 
             tab += """
   <tbody>
@@ -100,7 +100,7 @@ class Table:
             if self.footer is not None:
                 tab += self.footer + '\n'
 
-        if format == 'notebook':
+        if self.format == 'notebook':
             from IPython.display import HTML, display_html
             tab = HTML(tab)
 
