@@ -26,7 +26,8 @@ class Brew:
 
     parameter_sets : list of strings, optional
       Load these parameter sets from the configuration file (in
-      order), before processing optional keyword values.
+      order), after loading the defaults and before processing
+      optional keyword values.
 
     r_mash : float, optional
       Ratio of water volume to grain weight, qt/lb.
@@ -61,7 +62,7 @@ class Brew:
 
     """
 
-    def __init__(self, ingredients, target_volume, parameter_sets=['default'],
+    def __init__(self, ingredients, target_volume, parameter_sets=None,
                  **kwargs):
         from collections import Iterable
         from .configuration import get_config
