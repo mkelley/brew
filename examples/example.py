@@ -1,9 +1,7 @@
-#import brew as b
-#from brew import Ingredients, Fermentable, Spice, Fruit, Water, Unspecified, Priming, PPG, Hop, Culture, CultureBank, Boil, Packaging
 from brew import *
 
 ingredients = Ingredients([
-    Fermentable(PPG.AmericanTwoRow, 10),
+    Grain(PPG.AmericanTwoRow, 10),
     Hop('Cascade', 7.0, 1.0, Boil(60)),
     Hop('Cascade', 7.0, 0.5, Boil(30)),
     Hop('Cascade', 7.0, 0.5, Boil(10)),
@@ -20,10 +18,10 @@ brew.ferment()
 
 print('-' * 80)
 ingredients = Ingredients([
-    Fermentable(PPG.MarisOtter, 6.5),
-    Fermentable(PPG.OatsFlaked, 1),
-    Fermentable(PPG.EnglishCrystal60_70, 0.5),
-    Fermentable(PPG.Black, 0.5, name='Carafa II'),
+    Grain(PPG.MarisOtter, 6.5),
+    Grain(PPG.OatsFlaked, 1),
+    Grain(PPG.EnglishCrystal60_70, 0.5),
+    Grain(PPG.Black, 0.5, name='Carafa II'),
     Hop('UK Target', 10, 0.25, Boil(60)),
     Hop('UK Target', 10, 0.125, Boil(20)),
     Spice('Cinnamon', '6 sticks', Packaging()),
@@ -36,6 +34,6 @@ ingredients = Ingredients([
     Priming('Table sugar', '2.1 oz', Packaging()),
     Culture(CultureBank.DryEnglishAle)
 ])
-brew = Brew(ingredients, 5.0, efficiency=0.64, T_sacc=154)
+brew = Brew(ingredients, 5.0, efficiency=0.64, T_sacc=[154])
 brew.ferment()
 
