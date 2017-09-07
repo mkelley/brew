@@ -14,7 +14,7 @@ encounter errors, your feedback would be appreciated.
 The `Brew` class holds the recipe and brew day configuration.  It will `mash`, `boil`, and `ferment` your ingredients to make beer.  The ingredients are held in an `Ingredients` class.  Each ingredient, e.g., `Grain`, `Sugar`, `Hop`, `Fruit`, `Unfermentable`, `Spice`, `Culture`, specifies the amount to add, and when to add it (i.e., timing).  The timing can be at any step in the process, e.g., `Mash`, `Vorlauf`, `Boil`, `Hop Stand`, `Secondary`, but some steps do not make sense for some ingredients, and may cause strange results.  See the `Brew` docstring (`help(Brew)`) for definitions of all configurable brew parameters, e.g., mash water to grist ratio (`r_mash`), boil time (`boil_time`), boil-off rate (`r_boil`), or volume left in kettle after racking (`kettle_gap`).
 
 The module is configured via a small text (JSON) file in your home directory.  The file name can be discovered via:
-```python
+```
 >>> import brew.configuration
 >>> brew.configuration.config_file
 '/home/msk/.config/brew/config.json'
@@ -46,7 +46,7 @@ $ cat /home/msk/.config/brew/config.json
 }
 ```
 The result of loading parameter sets can be shown via:
-```python
+```
 >>> brew.configuration.get_config(['pre-Aug 2017'])
 {'T_grain': 65,
  'T_rest': [],
@@ -70,7 +70,7 @@ The result of loading parameter sets can be shown via:
 
 Estimate wort gravity based on a grist of 10 lbs 2-row, 2 lbs Munich, and 5.0 gal in the primary.
 
-```python
+```
 >>> brew = Brew(Ingredients([Grain(PPG.AmericanTwoRow, 10), Grain(PPG.GermanMunich, 2)]), 5.5)
 >>> wort = brew.mash()
 
@@ -102,7 +102,7 @@ Collect 7.0 gal of wort
 Hop schedule and total IBU estimate from 7.3% alpha Cascade pellets, 1
 ounce added at 60, 10, and 0 minutes left in the boil.
 
-```python
+```
 >>> brew.ingredients.extend([Hop('Cascade', 7.3, 1, Boil(60)), Hop('Cascade', 7.3, 1, Boil(10)), Hop('Cascade', 7.3, 1, Boil(0))])
 >>> print(brew.ingredients)
 Ingredients:
@@ -127,7 +127,7 @@ Post-boil: 6.0 gal at 1.048, 31 IBU
 
 #### Ferment
 
-```python
+```
 >>> brew.ingredients.append(Culture(CultureBank.CaliforniaAle))
 >>> print(brew.ingredients)
 Ingredients:
@@ -149,9 +149,9 @@ Carbohydrates: 16.5 g
 
 ```
 
-### Brew a saison.
+### Brew a saison
 
-```python
+```
 >>> ingredients = Ingredients([Grain(PPG.GermanPilsner, 8.5), Grain(PPG.AmericanRyeMalt, 1.5), Grain(PPG.WheatFlaked, 1), Hop('Belma', 10.8, 0.7, Boil(60)), Hop('French Strisselspalt', 1.2, 1.0, Boil(10)), Culture(CultureBank.BelgianSaisonII)])
 >>> brew = Brew(ingredients, 5.0, parameter_sets='pre-Aug 2017', T_sacc=[146], efficiency=0.75)
 >>> print(brew.ingredients)
@@ -209,4 +209,72 @@ Apparent attenutation: 87%
 ABV: 6.3%
 Calories: 184
 Carbohydrates: 14.2 g
+```
+
+### Brew a spiced mild
+```
+>>> ingredients = Ingredients([
+    Grain(PPG.MarisOtter, 6.5),
+    Grain(PPG.OatsFlaked, 1),
+    Grain(PPG.EnglishCrystal60_70, 0.5),
+    Grain(PPG.Black, 0.5, name='Carafa II'),
+    Hop('UK Target', 10, 0.25, Boil(60)),
+    Hop('UK Target', 10, 0.125, Boil(20)),
+    Spice('Cinnamon', '6 sticks', Packaging()),
+    Spice('Allspice, whole (ground)', '1 tablespoon', Packaging()),
+    Spice('Nutmeg, whole (ground)', '1 tablespoon', Packaging()),
+    Spice('Cloves, whole (ground)', '2 teaspoons', Packaging()),
+    Spice('Ginger, dried, ground', '1/2 tablespoon', Packaging()),
+    Spice('Tincture of orange zest', 'from 2 Valencia oranges extracted with 2 oz vodka', Packaging()),
+    Water('Filtered WSSC tap', 0, Unspecified()),
+    Priming('Table sugar', '2.1 oz', Packaging()),
+    Culture(CultureBank.DryEnglishAle)
+])
+>>> brew = Brew(ingredients, 5.0, efficiency=0.64, T_sacc=[154])
+>>> brew.ferment()
+=====================  ======  ======  ===============  ===  =======  ================
+Grain/Adjunct          Timing  Weight  Weight Fraction  PPG  Extract  Extract Fraction
+=====================  ======  ======  ===============  ===  =======  ================
+Maris Otter            Mash    6.500   76.5%            38   158.1    79.8%           
+Oats, flaked           Mash    1.000   11.8%            33   21.1     10.7%           
+English crystal 60-70  Mash    0.500   5.9%             34   10.9     5.5%            
+Carafa II              Mash    0.500   5.9%             25   8.0      4.0%            
+=====================  ======  ======  ===============  ===  =======  ================
+
+Kettle volume: 6.5 gal
+Efficiency: 64%
+Pre-boil specific gravity: 1.030
+
+
+
+==========  ===========  ============
+T mash (F)  T water (F)  Volume (gal)
+==========  ===========  ============
+154         160          5.95        
+==========  ===========  ============
+
+Total mash water: 5.9 gal (2.8 qt/lb)
+Sparge with 1.9 gal of water
+Collect 6.5 gal of wort
+
+
+
+=========  =======  =====  ======  ===================  ===========  ==========
+Hop        Type     Alpha  Weight  Time                 Utilization  Bitterness
+=========  =======  =====  ======  ===================  ===========  ==========
+UK Target  Pellets  10.0   0.2     Boil for 60 minutes  27.5         9         
+UK Target  Pellets  10.0   0.1     Boil for 20 minutes  16.6         3         
+=========  =======  =====  ======  ===================  ===========  ==========
+
+Pre-boil: 6.5 gal at 1.030
+Post-boil: 5.5 gal at 1.036, 12 IBU
+
+
+Starting gravity: 1.036
+Final gravity: 1.010
+Bitterness: 12 IBU
+Apparent attenutation: 73%
+ABV: 3.4%
+Calories: 123
+Carbohydrates: 13.3 g
 ```
