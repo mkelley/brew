@@ -1,4 +1,4 @@
-# brew
+# brew 2.0-beta
 
 A library for homebrewing.
 
