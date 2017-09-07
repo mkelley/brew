@@ -162,8 +162,8 @@ class Brew:
 
         """
         from . import timing as T
-        extract = [f.extract(self['efficiency']) for f in ingredients.at(T.Sparge())]
-        extract.extend([f.extract(1.0) for f in ingredients.after(T.Sparge())])
+        
+        extract = [f.extract(self['efficiency']) for f in ingredients]
         return extract
 
     def extract(self, time, upto=False):
@@ -249,16 +249,20 @@ class Brew:
         from .ingredients import Ingredients, Fermentable, Unfermentable
         from . import _default_format
 
-        ingredients = Ingredients([f for f in self.ingredients.at(T.Lauter()) if isinstance(f, (Fermentable, Unfermentable))])
+        # all ingredients with extract, and just the mashed ones
+        ingredients = self.ingredients.filter(Fermentable, Unfermentable)
+        mashed = ingredients.filter(T.Mash, T.Vorlauf, T.Sparge, T.Lauter)
+
         total_weight = sum([f.weight for f in ingredients])
         grain_weight = sum([f.weight for f in ingredients.grains])
 
         v_kettle = self.volume(T.Lauter())
-        extract = self.extract(T.Lauter())
+        extract = self._extract(ingredients)
+        mash_extract = sum(self._extract(mashed))
         total_extract = sum(extract)
         
-        sg = 1 + total_extract / v_kettle / 1000
-        wort = Wort(sg, v_kettle)
+        preboil_sg = 1 + mash_extract / v_kettle / 1000
+        wort = Wort(preboil_sg, v_kettle)
 
         T_infusion, v_infusion, v_sparge = self.infusion()
         v_mash = sum(v_infusion)
@@ -280,7 +284,7 @@ class Brew:
         tab.footer = '''Kettle volume: {:.1f} gal
 Efficiency: {:.0%}
 Pre-boil specific gravity: {:.3f}
-'''.format(v_kettle, self['efficiency'], sg)
+'''.format(v_kettle, self['efficiency'], preboil_sg)
 
         print(tab)
         
@@ -301,9 +305,8 @@ Collect {:.1f} gal of wort
     def boil(self, wort=None):
         """Boil the wort.
 
-        Uses mean volume of boil to estimate α-acid conversion.  Boil
-        additions after the start of the boil do not affect the
-        conversion efficiencies.
+        Uses gravity at start of boil.  John Palmer's How to Brew
+        suggests this is OK.
 
         Parameters
         ----------
@@ -325,11 +328,9 @@ Collect {:.1f} gal of wort
             wort = self.mash()
         
         v_preboil = wort.volume
-        v_boil = v_preboil - self['boil_time'] / 2 / 60 * self['r_boil']
         v_postboil = self.volume(T.Primary(), upto=True)
 
         sg_preboil = wort.gravity
-        sg_boil = 1 + (sg_preboil - 1) * v_preboil / v_boil
         
         ex_postboil = sum(self.extract(T.Primary(), upto=True))
         sg_postboil = 1 + ex_postboil / v_postboil / 1000
@@ -338,7 +339,7 @@ Collect {:.1f} gal of wort
         bit = []
         hops = self.ingredients.hops
         for hop in hops:
-            r = hop.bitterness(sg_boil, v_postboil,
+            r = hop.bitterness(sg_preboil, v_postboil,
                                boil=self['boil_time'],
                                hop_stand=self.hop_stand)
             util.append(r[0])
@@ -358,12 +359,9 @@ Collect {:.1f} gal of wort
             format=_default_format)
         tab.colformats = ('{}', '{}', '{:.1f}', '{:.1f}', '{}', '{:.1f}',
                           '{:.0f}')
-        tab.footer = '''Pre-boil volume: {} gal
-Post-boil volume: {} gal
-Mean boil gravity: {:.3f}
-Post-boil gravity: {:.3f}
-Post-boil bitterness: {:.0f} IBU
-'''.format(v_preboil, v_postboil, sg_boil, sg_postboil, sum(bit))
+        tab.footer = '''Pre-boil: {} gal at {:.3f}
+Post-boil: {} gal at {:.3f}, {:.0f} IBU
+'''.format(v_preboil, sg_preboil, v_postboil, sg_postboil, sum(bit))
         if self.hop_stand:
             tab.footer += '\nHop stand'
 
@@ -371,15 +369,15 @@ Post-boil bitterness: {:.0f} IBU
         
         return Wort(sg_postboil, v_postboil, sum(bit))
 
-    def ferment(self, wort=None, attenuation=None):
+    def ferment(self, wort=None, grain_attenuation=None):
         """Ferment wort.
 
         Parameters
         ----------
         wort : Wort, optional
           Ferment this wort, else use `boil`.
-        attenuation : float, optional
-          Force fermentation to match this apparent attenuation.
+        grain_attenuation : float, optional
+          Force fermentation to match this apparent attenuation for grains.
         
         Returns
         -------
@@ -413,10 +411,11 @@ Post-boil bitterness: {:.0f} IBU
         # if a mixed fermentation, use the highest attenuation
         beer = []
         for culture in self.ingredients.cultures:
-            if attenuation is None:
+            if grain_attenuation is None:
                 fg = final_gravity(grain_sg, self['T_sacc'], culture)
             else:
-                fg = final_gravity(grain_sg, self['T_sacc'], ('', attenuation))
+                # use 152 to avoid a mash temperature correction
+                fg = final_gravity(grain_sg, 152, ('', grain_attenuation))
 
             fg += unfermentable_sg - 1
             beer.append(Beer(sg, fg, bit))

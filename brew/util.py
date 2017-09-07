@@ -124,7 +124,7 @@ def final_gravity(sg, T_sacc, culture):
     else:
         T = T_sacc
 
-    atten = sum(aa[1:]) / (len(aa) - 1)
+    atten = sum(aa) / len(aa)
     dT = T - 152
     a = atten - dT
     return sg - (sg - 1) * a / 100

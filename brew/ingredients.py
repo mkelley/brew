@@ -20,6 +20,8 @@ __all__ = [
     'Hop',
     'Spice',
     'Fruit',
+    'Grain',
+    'Sugar',
     'Other',
     'Priming',
     'Water',
@@ -28,89 +30,89 @@ __all__ = [
 
 # Source: Home Brewer's Companion
 # Beersmith: http://www.beersmith.com/Grains/Grains/GrainList.htm
-# name, PPG, grain flag, 100% fermentable flag
+# name, PPG
 class PPG(Enum):
-    AcidMalt = "Acid malt", 27, True, False  # (Germany) Beersmith
-    AmericanTwoRow = "American 2-row", 37, True, False
-    AmericanSixRow = "American 6-row", 35, True, False
-    AmericanPaleAle = "American pale ale", 36, True, False
-    BelgianPaleAle = "Belgian pale ale", 37, True, False
-    BelgianPilsener = "Belgian pilsener", 37, True, False
-    DriedMaltExtract = "Dried malt extract", 44, True, False
-    EnglishTwoRow = "English 2-row", 38, True, False
-    EnglishMild = "English mild", 37, True, False
-    MarisOtter = "Maris Otter", 38, True, False
-    WheatMalt = "Wheat malt", 38, True, False  # midwest / german / belgian
-    AmericanRyeMalt = "American rye malt", 36, True, False
-    GermanRyeMalt = "German rye malt", 38, True, False
-    GermanPilsner = "German pilsner", 37, True, False
-    EnglishRyeMalt = "English rye malt", 40, True, False
-    EnglishOatMalt = "English oat malt", 35, True, False
-    AmericanVienna = "American Vienna", 36, True, False
-    GermanVienna = "German Vienna", 37, True, False
-    AmericanCarapils = "American Carapils", 34, True, False  # dextrine
-    BelgianCarapils = "Belgian Carapils", 36, True, False
-    AmericanMunich = "American Munich", 34, True, False
-    GermanMunich = "German Munich", 37, True, False
-    GermanMunichII = "Germain Munich II", 36, True, False
-    BelgianMunich = "Belgian Munich", 37, True, False
-    Caramunich = "Caramunich", 33, True, False  # Beersmith
-    AmericanCaramel10 = "American caramel 10", 35, True, False
-    AmericanCaramel20 = "American caramel 20", 35, True, False
-    AmericanCaramel40 = "American caramel 40", 35, True, False
-    AmericanCaramel60 = "American caramel 60", 34, True, False
-    AmericanCaramel120 = "American caramel 120", 33, True, False
-    EnglishCrystal20_30 = "English crystal 20-30", 36, True, False
-    EnglishCrystal60_70 = "English crystal 60-70", 34, True, False
-    EnglishCaramalt = "English Caramalt", 36, True, False
-    BelgianCrystal = "Belgian crystal", 36, True, False
-    AmericanVictory = "American Victory", 33, True, False
-    BelgianBiscuit = "Belgian biscuit", 36, True, False
-    BelgianAromatic = "Belgian aromatic", 36, True, False
-    EnglishBrown = "English brown", 33, True, False
-    EnglishAmber = "English amber", 33, True, False
-    BelgianSpecialB = "Belgian Special B", 35, True, False
-    AmericanChocolate = "American chocolate", 28, True, False  # Beersmith
-    EnglishPaleChocolate = "English pale chocolate", 34, True, False # Beersmith
-    EnglishChocolate = "English chocolate", 34, True, False  # Beersmith
-    Carahell = "Carahell", 35, True, False  # guess
-    Black = "Black", 25, True, False  # Beersmith
-    RoastedBarley = "Roasted barley", 18, True, False
-    BarleyRaw = "Barley, raw", 32, True, False  # 30 to 34
-    Barleyflaked = "Barley, flaked", 32, True, False  # 30 to 34
-    CornFlaked = "Corn, flaked", 39, True, False
-    CornGrits = "Corn grits", 37, True, False
-    MilletRaw = "Millet, raw", 37, True, False
-    SorghumRaw = "Sorghum, raw", 37, True, False
-    OatsRaw = "Oats, raw", 33, True, False
-    OatsFlaked = "Oats, flaked", 33, True, False
-    RiceRaw = "Rice, raw", 38, True, False
-    RiceFlaked = "Rice, flaked", 38, True, False
-    RyeRaw = "Rye, raw", 36, True, False
-    RyeFlaked = "Rye, flaked", 36, True, False
-    WheatFlaked = "Wheat, flaked", 33, True, False
-    WheatRaw = "Wheat, raw", 37, True, False
-    WheatTorrified = "Wheat, torrified", 35, True, False
+    AcidMalt = "Acid malt", 27  # (Germany) Beersmith
+    AmericanTwoRow = "American 2-row", 37
+    AmericanSixRow = "American 6-row", 35
+    AmericanPaleAle = "American pale ale", 36
+    BelgianPaleAle = "Belgian pale ale", 37
+    BelgianPilsener = "Belgian pilsener", 37
+    DriedMaltExtract = "Dried malt extract", 44
+    EnglishTwoRow = "English 2-row", 38
+    EnglishMild = "English mild", 37
+    MarisOtter = "Maris Otter", 38
+    WheatMalt = "Wheat malt", 38  # midwest / german / belgian
+    AmericanRyeMalt = "American rye malt", 36
+    GermanRyeMalt = "German rye malt", 38
+    GermanPilsner = "German pilsner", 37
+    EnglishRyeMalt = "English rye malt", 40
+    EnglishOatMalt = "English oat malt", 35
+    AmericanVienna = "American Vienna", 36
+    GermanVienna = "German Vienna", 37
+    AmericanCarapils = "American Carapils", 34  # dextrine
+    BelgianCarapils = "Belgian Carapils", 36
+    AmericanMunich = "American Munich", 34
+    GermanMunich = "German Munich", 37
+    GermanMunichII = "Germain Munich II", 36
+    BelgianMunich = "Belgian Munich", 37
+    Caramunich = "Caramunich", 33  # Beersmith
+    AmericanCaramel10 = "American caramel 10", 35
+    AmericanCaramel20 = "American caramel 20", 35
+    AmericanCaramel40 = "American caramel 40", 35
+    AmericanCaramel60 = "American caramel 60", 34
+    AmericanCaramel120 = "American caramel 120", 33
+    EnglishCrystal20_30 = "English crystal 20-30", 36
+    EnglishCrystal60_70 = "English crystal 60-70", 34
+    EnglishCaramalt = "English Caramalt", 36
+    BelgianCrystal = "Belgian crystal", 36
+    AmericanVictory = "American Victory", 33
+    BelgianBiscuit = "Belgian biscuit", 36
+    BelgianAromatic = "Belgian aromatic", 36
+    EnglishBrown = "English brown", 33
+    EnglishAmber = "English amber", 33
+    BelgianSpecialB = "Belgian Special B", 35
+    AmericanChocolate = "American chocolate", 28  # Beersmith
+    EnglishPaleChocolate = "English pale chocolate", 34 # Beersmith
+    EnglishChocolate = "English chocolate", 34  # Beersmith
+    Carahell = "Carahell", 35  # guess
+    Black = "Black", 25  # Beersmith
+    RoastedBarley = "Roasted barley", 18
+    BarleyRaw = "Barley, raw", 32  # 30 to 34
+    Barleyflaked = "Barley, flaked", 32  # 30 to 34
+    CornFlaked = "Corn, flaked", 39
+    CornGrits = "Corn grits", 37
+    MilletRaw = "Millet, raw", 37
+    SorghumRaw = "Sorghum, raw", 37
+    OatsRaw = "Oats, raw", 33
+    OatsFlaked = "Oats, flaked", 33
+    RiceRaw = "Rice, raw", 38
+    RiceFlaked = "Rice, flaked", 38
+    RyeRaw = "Rye, raw", 36
+    RyeFlaked = "Rye, flaked", 36
+    WheatFlaked = "Wheat, flaked", 33
+    WheatRaw = "Wheat, raw", 37
+    WheatTorrified = "Wheat, torrified", 35
     
-    AgaveSyrup = "Agave syrup", 34, False, False
-    BelgianCandiSugar = "Belgian candi sugar", 46, False, True
-    BelgianCandiSyrup = "Belgian candi syrup", 36, False, True
-    CaneSugar = "Cane sugar", 46, False, True
-    TableSugar = "Table sugar", 46, False, True
-    TurbinadoSugar = "Turbinado sugar", 46, False, True
-    LightBrownSugar = "Light brown sugar", 46, False, True
-    DarkBrownSugar = "Dark brown sugar", 46, False, True
-    CornSugarDextrose = "Corn sugar (dextrose)", 46, False, True
-    Lactose = "Lactose", 35, False, False
-    Honey = "Honey", 32, False, True  # 30 to 35
-    MapleSap = "Maple sap", 9, False, True
-    MapleSyrup = "Maple syrup", 30, False, True  # variable
-    Molasses = "Molasses", 36, False, True
-    Rapadura = "Rapadura", 40, False, True
-    RiceExtract = "Rice extract", 34, False, True
-    WhiteSorghumSyrup = "White sorghum syrup", 38, False, True
+    AgaveSyrup = "Agave syrup", 34
+    BelgianCandiSugar = "Belgian candi sugar", 46
+    BelgianCandiSyrup = "Belgian candi syrup", 36
+    CaneSugar = "Cane sugar", 46
+    TableSugar = "Table sugar", 46
+    TurbinadoSugar = "Turbinado sugar", 46
+    LightBrownSugar = "Light brown sugar", 46
+    DarkBrownSugar = "Dark brown sugar", 46
+    CornSugarDextrose = "Corn sugar (dextrose)", 46
+    Lactose = "Lactose", 35
+    Honey = "Honey", 32  # 30 to 35
+    MapleSap = "Maple sap", 9
+    MapleSyrup = "Maple syrup", 30  # variable
+    Molasses = "Molasses", 36
+    Rapadura = "Rapadura", 40
+    RiceExtract = "Rice extract", 34
+    WhiteSorghumSyrup = "White sorghum syrup", 38
     
-    PumpkinPuree = "Pumpkin puree", 2, False, False
+    PumpkinPuree = "Pumpkin puree", 2
 
 class CultureBank(Enum):
     # name, min, max apparent attenutation
@@ -148,34 +150,6 @@ class CultureBank(Enum):
     HouseSourMix = ('House sour mix', 86, 86)
     BottleDregs = ('Bottle dregs', 0, 100)
 
-class Culture:
-    """Yeast or other cultures, ready for fermentation.
-
-    Parameters
-    ----------
-    cultures : CultureBank
-      The type of culture(s) to propagate.
-    quantity : string, optional
-      The quantity of the culture.
-    timing : Timing, optional
-      The timing of the addition.
-    desc : string, optional
-      A long-form description.
-    
-    """
-
-    def __init__(self, culture, quantity='1', timing=T.Primary(), desc=None):
-        assert culture in CultureBank
-        assert isinstance(quantity, str)
-        assert isinstance(timing, T.Timing)
-        assert isinstance(desc, (str, type(None)))
-        self.culture = culture
-        self.quantity = quantity
-        self.timing = timing
-        self.name = self.culture.value[0]
-        self.attenuation = (self.culture.value[1], self.culture.value[2])
-        self.desc = self.name if desc is None else desc
-
 class Ingredient:
     """Beer ingredient.
 
@@ -206,23 +180,44 @@ class Ingredient:
     def __str__(self):
         return "{}, {} at {}".format(self.name, self.quantity, self.timing)
 
+class Culture(Ingredient):
+    """Yeast or other cultures, ready for fermentation.
+
+    Parameters
+    ----------
+    culture : CultureBank
+      The type of culture to propagate.
+    quantity : string, optional
+      The quantity of the culture.
+    timing : Timing, optional
+      The timing of the addition.
+    desc : string, optional
+      A long-form description.
+    
+    """
+
+    def __init__(self, culture, quantity='1', timing=T.Primary(), desc=None):
+        assert culture in CultureBank
+        assert isinstance(quantity, str)
+        assert isinstance(timing, T.Timing)
+        assert isinstance(desc, (str, type(None)))
+        self.culture = culture
+        self.quantity = quantity
+        self.timing = timing
+        self.name = self.culture.value[0]
+        self.attenuation = (self.culture.value[1], self.culture.value[2])
+        self.desc = self.name if desc is None else desc
+
 class Fermentable(Ingredient):
     """Grains and adjuncts.
 
     Parameters
     ----------
-    ppg : PPG or float
+    ppg : PPG, int, or float
       The item being fermented, or the number of gravity points added
       per pound per gallon (requires `name`).
     weight : float
       The weight in pounds.
-    grain : bool, optional
-      Indicates if this ingredient is a grain (especially for mash
-      water absorption calculation).  Ignored if `ppg` is a `PPG`
-      instance.
-    fermentable100 : bool, optional
-      Indicates if this ingredient is 100% fermentable.  Ignored if
-      `ppg` is a `PPG` instance.
     timing : Timing, optional
       The timing of the addition.
     name : string, optional
@@ -233,24 +228,19 @@ class Fermentable(Ingredient):
 
     """
 
-    def __init__(self, ppg, weight, grain=True, fermentable100=False,
-                 timing=T.Mash(), name=None, desc=None):
+    def __init__(self, ppg, weight, timing=T.Mash(), name=None, desc=None):
         assert isinstance(ppg, (PPG, float, int))
         assert isinstance(weight, (float, int))
         assert isinstance(timing, T.Timing)
-        assert isinstance(grain, bool)
-        assert isinstance(fermentable100, bool)
         assert isinstance(name, (str, type(None)))
         assert isinstance(desc, (str, type(None)))
 
         if isinstance(ppg, PPG):
-            self.name, self.ppg, self.grain, self.fermentable100 = ppg.value
+            self.name, self.ppg = ppg.value
             if name is not None:
                 self.name = name
         else:
-            self.ppg = float(ppg)
-            self.grain = grain
-            self.fermentable100 = fermentable100
+            self.ppg = int(ppg)
             assert name is not None, '`name` is required when `ppg` is a float.'
             self.name = name
 
@@ -272,7 +262,7 @@ class Fermentable(Ingredient):
     def extract(self, mash_efficiency):
         """Amount of extract per gallon."""
         ex = self.weight * self.ppg
-        if isinstance(self.timing, (T.Mash, T.Vorlauf)):
+        if self.timing < T.Lauter():
             ex *= mash_efficiency
         return ex
 
@@ -308,7 +298,7 @@ class Unfermentable(Ingredient):
             if name is not None:
                 self.name = name
         else:
-            ppg = float(ppg)
+            ppg = int(ppg)
             assert name is not None, '`name` is required when `ppg` is a float.'
             self.name = name
 
@@ -330,7 +320,7 @@ class Unfermentable(Ingredient):
     def extract(self, mash_efficiency):
         """Amount of extract per gallon."""
         ex = self.weight * self.ppg
-        if isinstance(self.timing, (T.Mash, T.Vorlauf)):
+        if self.timing < T.Lauter():
             ex *= mash_efficiency
         return ex
 
@@ -433,6 +423,18 @@ class Hop(Ingredient):
 class Spice(Ingredient):
     pass
 
+class Grain(Fermentable):
+    """A mashable grain or similar."""
+    def __init__(self, ppg, weight, timing=T.Mash(), name=None, desc=None):
+        Fermentable.__init__(self, ppg, weight, timing=timing, name=name,
+                             desc=desc)
+
+class Sugar(Fermentable):
+    """Sugars, syrups, and similar 100% fermentables."""
+    def __init__(self, ppg, weight, timing=T.Boil(0), name=None, desc=None):
+        Fermentable.__init__(self, ppg, weight, timing=timing, name=name,
+                             desc=desc)
+
 class Fruit(Fermentable):
     """Fermentable fruit forms.
 
@@ -469,8 +471,6 @@ class Fruit(Fermentable):
         self.sg = float(sg)
         self.weight = float(weight)
         self.timing = timing
-        self.grain = False
-        self.fermentable100 = False
         self.density = float(density)
         self.desc = name if desc is None else desc
 
@@ -540,7 +540,7 @@ class Ingredients(MutableSequence):
 
     Parameters
     ----------
-    a : list
+    a : iterable
       A list of `Ingredient`s.
 
     """
@@ -672,24 +672,54 @@ class Ingredients(MutableSequence):
 
     @property
     def fermentables(self):
-        return Ingredients(list(filter(lambda v: isinstance(v, Fermentable), self)))
-
-    @property
-    def grains(self):
-        return Ingredients(list(filter(lambda v: v.grain, self.fermentables)))
+        return self.filter(Fermentable)
 
     @property
     def unfermentables(self):
-        return Ingredients(list(filter(lambda v: isinstance(v, Unfermentable), self)))
+        return self.filter(Unfermentable)
     
     @property
+    def grains(self):
+        return self.filter(Grain)
+
+    @property
+    def sugars(self):
+        return self.filter(Sugar)
+
+    @property
+    def spices(self):
+        return self.filte(Spice)
+
+    @property
     def fruits(self):
-        return Ingredients(list(filter(lambda v: isinstance(v, Fruit), self)))
+        return self.filter(Fruit)
     
     @property
     def hops(self):
-        return Ingredients(list(filter(lambda v: isinstance(v, Hop), self)))
+        return self.filter(Hop)
     
     @property
     def cultures(self):
-        return Ingredients(list(filter(lambda v: isinstance(v, Culture), self)))
+        return self.filter(Culture)
+
+    def filter(self, *t):
+        """Filter ingredients by type and/or timing.
+
+        Parameters
+        ----------
+        *t : Ingredient or Timing classes
+          The types or timing of ingredients to return.
+
+        """
+
+        ingredients = self
+        
+        if any([issubclass(x, Ingredient) for x in t]):
+            i = filter(lambda i: isinstance(i, t), ingredients)
+            ingredients = Ingredients(i)
+        
+        if any([issubclass(x, T.Timing) for x in t]):
+            i = filter(lambda i: isinstance(i.timing, t), ingredients)
+            ingredients = Ingredients(i)
+
+        return ingredients

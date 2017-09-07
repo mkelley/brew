@@ -11,6 +11,7 @@ from abc import ABC
 __all__ = [
     'Mash',
     'Vorlauf',
+    'Sparge',
     'Lauter',
     'FirstWort',
     'Boil',
@@ -134,9 +135,9 @@ class Boil(Timing):
     
     def __gt__(self, other):
         if isinstance(other, Boil):
-            return self.time > other.time
+            return self.time < other.time
         else:
-            return self.step < other.step
+            return self.step > other.step
 
 class HopStand(Timing):
     """Hop stands.
