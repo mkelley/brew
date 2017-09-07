@@ -31,7 +31,7 @@ config_default = OrderedDict(
     )
 )
 
-def get_config(parameter_sets=['default']):
+def get_config(parameter_sets=None):
     """Read parameters from the configuration file.
 
     Parameters
@@ -70,7 +70,9 @@ def get_config(parameter_sets=['default']):
             config = json.load(inf)
 
     c = {}
-    for s in parameter_sets:
-        c.update(config[s])
+    c.update(config['default'])
+    if parameter_sets is not None:
+        for s in parameter_sets:
+            c.update(config[s])
 
     return c
