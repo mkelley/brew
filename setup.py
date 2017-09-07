@@ -2,6 +2,6 @@ from setuptools import setup, find_packages
 
 setup(
     name="Brew",
-    version="1.0pre1",
+    version="2.0-beta",
     packages=find_packages(),
 )

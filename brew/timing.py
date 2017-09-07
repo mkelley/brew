@@ -8,6 +8,21 @@ timing --- Timing for additions.
 
 from abc import ABC
 
+__all__ = [
+    'Mash',
+    'Vorlauf',
+    'Sparge',
+    'Lauter',
+    'FirstWort',
+    'Boil',
+    'HopStand',
+    'Primary',
+    'Secondary',
+    'Packaging',
+    'Final',
+    'Unspecified',
+]
+
 class Timing(ABC):
     def __init__(self):
         self.time = 'N/A'
@@ -46,8 +61,28 @@ class Vorlauf(Timing):
     name = 'Vorlauf'
     step = 2
 
+class Sparge(Timing):
+    """Sparge.
+
+    This is the Mash side of the lauter.
+
+    """
+
+    name = 'Sparge'
+    step = 3
+    
+class Lauter(Timing):
+    """Get the wort out.
+
+    This is the kettle side of the lauter.
+
+    """
+    
+    name = 'Lauter'
+    step = 4
+
 class FirstWort(Timing):
-    """First wort additions, typically hops.
+    """First wort additions, typically hops in the kettle.
 
     Parameters
     ----------
@@ -57,7 +92,7 @@ class FirstWort(Timing):
     """
     
     name = 'First wort'
-    step = 3
+    step = 5
 
     def __init__(self, time):
         assert isinstance(time, (float, int))
@@ -77,7 +112,7 @@ class Boil(Timing):
     """
     
     name = 'Boil'
-    step = 4
+    step = 6
 
     def __init__(self, time):
         assert isinstance(time, (float, int))
@@ -100,9 +135,9 @@ class Boil(Timing):
     
     def __gt__(self, other):
         if isinstance(other, Boil):
-            return self.time > other.time
+            return self.time < other.time
         else:
-            return self.step < other.step
+            return self.step > other.step
 
 class HopStand(Timing):
     """Hop stands.
@@ -115,7 +150,7 @@ class HopStand(Timing):
     """
 
     name = 'Hop stand'
-    step = 5
+    step = 7
 
     def __init__(self, time):
         assert isinstance(time, (float, int))
@@ -145,7 +180,7 @@ class HopStand(Timing):
 class Primary(Timing):
     """Additions in the primary."""
     name = 'Primary'
-    step = 6
+    step = 8
 
 class Secondary(Timing):
     """Additions in the seconary.
@@ -158,7 +193,7 @@ class Secondary(Timing):
     """
 
     name = 'Secondary'
-    step = 7
+    step = 9
 
     def __init__(self, time=None):
         if time is None:
@@ -194,12 +229,12 @@ class Secondary(Timing):
 class Packaging(Timing):
     """Additions at packaging."""
     name = 'Packaging'
-    step = 8
+    step = 10
 
 class Final(Timing):
     """The beer is ready!"""
     name = 'Final'
-    step = 9
+    step = 11
 
 class Unspecified(Timing):
     """No specific time specified."""

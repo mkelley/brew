@@ -1,19 +1,30 @@
 # Licensed under an MIT style license - see LICENSE
 
 """
-brew --- A homebrew library.
-============================
+brew --- A homebrew calculator.
+===============================
 
 """
 
-from . import mash
-from . import hops
-from . import fermentation
+from . import ingredients
 from . import timing
-from . import util
+from . import brew
 
 from .brew import *
-from .mash import PPG
+from .ingredients import *
 from .timing import *
-from .fermentation import CultureBank
 
+_default_format = 'text'  # default format for tables
+
+def set_format(format):
+    """Set the default format for summary output.
+
+    Parameters
+    ----------
+    format : string
+      'text', 'html', 'notebook'
+
+    """
+    global _default_format
+    assert format in ['text', 'html', 'notebook']
+    _default_format = format
