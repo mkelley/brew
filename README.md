@@ -68,8 +68,7 @@ The result of loading parameter sets can be shown via:
 
 #### Mash
 
-Estimate wort gravity based on a grist of 10 lbs 2-row, 2 lbs Munich,
-and a post-boil gravity of 5.5 gal.
+Estimate wort gravity based on a grist of 10 lbs 2-row, 2 lbs Munich, and 5.0 gal in the primary.
 
 ```python
 >>> brew = Brew(Ingredients([Grain(PPG.AmericanTwoRow, 10), Grain(PPG.GermanMunich, 2)]), 5.5)
