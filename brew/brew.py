@@ -24,7 +24,7 @@ class Brew:
       The target wort volume in the primary, before any `Primary`
       additions, gallons.
 
-    parameter_sets : list of strings, optional
+    parameter_sets : string or list of strings, optional
       Load these parameter sets from the configuration file (in
       order), after loading the defaults and before processing
       optional keyword values.

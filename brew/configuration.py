@@ -36,7 +36,7 @@ def get_config(parameter_sets=None):
 
     Parameters
     ----------
-    parameter_sets : list of strings, optional
+    parameter_sets : string or list of strings, optional
       Load these parameter sets, in order.
 
     Returns
@@ -45,7 +45,13 @@ def get_config(parameter_sets=None):
 
     """
 
+    from collections import Iterable
+    
     global config_file, config_default
+
+    assert isinstance(parameter_sets, (Iterable, type(None)))
+    if isinstance(parameter_sets, str):
+        parameter_sets = [parameter_sets]
 
     config = OrderedDict()
     if not os.path.exists(config_file):
