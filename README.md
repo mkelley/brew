@@ -1,56 +1,104 @@
-============
-brew
-============
+# brew
 
 A library for homebrewing.
 
 Requires: python3 (3.4+ recommended).
 
 
-Caution
-=======
-
+## Caution
 I hope you find brew useful, but use at your own risk.  If you
 encounter errors, your feedback would be appreciated.
 
+## Overview
 
-Examples
-========
+The `Brew` class holds the recipe and brew day configuration.  It will `mash`, `boil`, and `ferment` your ingredients to make beer.  The ingredients are held in an `Ingredients` class.  Each ingredient, e.g., `Grain`, `Sugar`, `Hop`, `Fruit`, `Unfermentable`, `Spice`, `Culture`, specifies the amount to add, and when to add it (i.e., timing).  The timing can be at any step in the process, e.g., `Mash`, `Vorlauf`, `Boil`, `Hop Stand`, `Secondary`, but some steps do not make sense for some ingredients, and may cause strange results.  See the `Brew` docstring (`help(Brew)`) for definitions of all configurable brew parameters, e.g., mash water to grist ratio (`r_mash`), boil time (`boil_time`), boil-off rate (`r_boil`), or volume left in kettle after racking (`kettle_gap`).
 
-Mash
-----
+The module is configured via a small text (JSON) file in your home directory.  The file name can be discovered via:
+```python
+>>> import brew.configuration
+>>> brew.configuration.config_file
+'/home/msk/.config/brew/config.json'
+```
+The file is split into configuration sections.  The 'default' section is always loaded, additional sections are optionally loaded and override the defaults:
+```
+$ cat /home/msk/.config/brew/config.json
+{
+  "default": {
+    "r_mash": 2.8,
+    "absorption": 0.5,
+    "T_grain": 65,
+    "T_water": 200,
+    "T_rest": [],
+    "T_sacc": 152,
+    "mash_out": false,
+    "efficiency": 0.65,
+    "mlt_gap": 0.25,
+    "boil_time": 60,
+    "r_boil": 1.0,
+    "hop_stand": false,
+    "kettle_gap": 0.5
+  },
+  "pre-Aug 2017": {
+    "r_mash": 1.4,
+    "mash_out": true,
+    "efficiency": 0.72
+  }
+}
+```
+The result of loading parameter sets can be shown via:
+```python
+>>> brew.configuration.get_config(['pre-Aug 2017'])
+{'T_grain': 65,
+ 'T_rest': [],
+ 'T_sacc': 152,
+ 'T_water': 200,
+ 'absorption': 0.5,
+ 'boil_time': 60,
+ 'efficiency': 0.72,
+ 'hop_stand': False,
+ 'kettle_gap': 0.5,
+ 'mash_out': True,
+ 'mlt_gap': 0.25,
+ 'r_boil': 1.0,
+ 'r_mash': 1.4}
+```
+
+## Examples
+### Step-by-step
+
+#### Mash
 
 Estimate wort gravity based on a grist of 10 lbs 2-row, 2 lbs Munich,
 and a post-boil gravity of 5.5 gal.
 
+```python
 >>> brew = Brew(Ingredients([Grain(PPG.AmericanTwoRow, 10), Grain(PPG.GermanMunich, 2)]), 5.5)
 >>> wort = brew.mash()
 
-
-  ==============  ======  ======  ===============  ===  =======  ================
-  Grain/Adjunct   Timing  Weight  Weight Fraction  PPG  Extract  Extract Fraction
-  ==============  ======  ======  ===============  ===  =======  ================
-  American 2-row  Mash    10.000  83.3%            37   240.5    83.3%           
-  German Munich   Mash    2.000   16.7%            37   48.1     16.7%           
-  ==============  ======  ======  ===============  ===  =======  ================
+==============  ======  ======  ===============  ===  =======  ================
+Grain/Adjunct   Timing  Weight  Weight Fraction  PPG  Extract  Extract Fraction
+==============  ======  ======  ===============  ===  =======  ================
+American 2-row  Mash    10.000  83.3%            37   240.5    83.3%           
+German Munich   Mash    2.000   16.7%            37   48.1     16.7%           
+==============  ======  ======  ===============  ===  =======  ================
   
-  Kettle volume: 7.0 gal
-  Efficiency: 65%
-  Pre-boil specific gravity: 1.041
+Kettle volume: 7.0 gal
+Efficiency: 65%
+Pre-boil specific gravity: 1.041
   
 
-  ==========  ===========  ============
-  T mash (F)  T water (F)  Volume (gal)
-  ==========  ===========  ============
-  152         158          8.40        
-  ==========  ===========  ============
+==========  ===========  ============
+T mash (F)  T water (F)  Volume (gal)
+==========  ===========  ============
+152         158          8.40        
+==========  ===========  ============
   
-  Total mash water: 8.4 gal (2.8 qt/lb)
-  Sparge with 0.4 gal of water
-  Collect 7.0 gal of wort
+Total mash water: 8.4 gal (2.8 qt/lb)
+Sparge with 0.4 gal of water
+Collect 7.0 gal of wort
+```
 
-Boil
-----
+#### Boil
 
 Hop schedule and total IBU estimate from 7.3% alpha Cascade pellets, 1
 ounce added at 60, 10, and 0 minutes left in the boil.
@@ -78,8 +126,7 @@ Pre-boil: 7.0 gal at 1.041
 Post-boil: 6.0 gal at 1.048, 31 IBU
 ```
 
-Ferment
--------
+#### Ferment
 
 ```python
 >>> brew.ingredients.append(Culture(CultureBank.CaliforniaAle))
@@ -103,51 +150,64 @@ Carbohydrates: 16.5 g
 
 ```
 
-Brew a saison.
+### Brew a saison.
 
->>> brew.Brew(mash={'German pilsner': 8.5, 'American rye malt': 1.5, 'wheat, flaked': 1}, hops={'Belma': (10.8, 0.7, 60), 'French Strisselspalt': (1.2, 1.0, 10)}, yeast='WLP566', T_sacc=[146, 170])
+```python
+>>> ingredients = Ingredients([Grain(PPG.GermanPilsner, 8.5), Grain(PPG.AmericanRyeMalt, 1.5), Grain(PPG.WheatFlaked, 1), Hop('Belma', 10.8, 0.7, Boil(60)), Hop('French Strisselspalt', 1.2, 1.0, Boil(10)), Culture(CultureBank.BelgianSaisonII)])
+>>> brew = Brew(ingredients, 5.0, parameter_sets='pre-Aug 2017', T_sacc=[146], efficiency=0.75)
+>>> print(brew.ingredients)
+Ingredients:
+  [0] German pilsner (37 PPG), 8.50 lbs at Mash
+  [1] American rye malt (36 PPG), 1.50 lbs at Mash
+  [2] Wheat, flaked (33 PPG), 1.00 lb at Mash
+  [3] Belma (10.8% α), 0.70 oz at Boil for 60 minutes
+  [4] French Strisselspalt (1.2% α), 1.00 oz at Boil for 10 minutes
+  [5] WLP566, Belgian Saison II, 1 at Primary
 
-  =================  ======  ===============  ===  =======  ================
-  Grain/Adjunct      Weight  Weight Fraction  PPG  Extract  Extract Fraction
-  =================  ======  ===============  ===  =======  ================
-  German pilsner     8.500   77.3%            37   235.9    78.3%           
-  American rye malt  1.500   13.6%            36   40.5     13.4%           
-  wheat, flaked      1.000   9.1%             33   24.8     8.2%            
-  =================  ======  ===============  ===  =======  ================
-  
-  Volume: 5.5 gal
-  Efficiency: 75%
-  Specific gravity: 1.055
-  
-  
-  ==========  ===========  ============
-  T mash (F)  T water (F)  Volume (gal)
-  ==========  ===========  ============
-  146         158          3.85        
-  170         200          1.96        
-  ==========  ===========  ============
-  
-  Total mash water: 5.8 gal (2.1 qt/lb)
-  Sparge with 2.9 gal of water
-  
-  
-  ====================  =====  ======  ====  ===========  ==========
-  Hop                   Alpha  Weight  Time  Utilization  Bitterness
-  ====================  =====  ======  ====  ===========  ==========
-  Belma                 10.8   0.7     60    23.3         24        
-  French Strisselspalt  1.2    1.0     10    8.4          1         
-  ====================  =====  ======  ====  ===========  ==========
-  
-  Boil specific gravity: 1.049
-  Volume: 5.5 gal
-  Pellets
-  Total bitterness: 25 IBU
-  
-  
-  Fermentation with WLP566 / Belgian Saison II
-  Apparent attenutation: 88%
-  Final gravity: 1.007
-  ABV: 6.3%
-  Calories: 184
-  Carbohydrates: 14.2 g
+>>> brew.ferment()
+=================  ======  ======  ===============  ===  =======  ================
+Grain/Adjunct      Timing  Weight  Weight Fraction  PPG  Extract  Extract Fraction
+=================  ======  ======  ===============  ===  =======  ================
+German pilsner     Mash    8.500   77.3%            37   235.9    78.3%           
+American rye malt  Mash    1.500   13.6%            36   40.5     13.4%           
+Wheat, flaked      Mash    1.000   9.1%             33   24.8     8.2%            
+=================  ======  ======  ===============  ===  =======  ================
 
+Kettle volume: 6.5 gal
+Efficiency: 75%
+Pre-boil specific gravity: 1.046
+
+
+
+==========  ===========  ============
+T mash (F)  T water (F)  Volume (gal)
+==========  ===========  ============
+146         158          3.85        
+170         200          1.96        
+==========  ===========  ============
+
+Total mash water: 5.8 gal (2.1 qt/lb)
+Sparge with 2.3 gal of water
+Collect 6.5 gal of wort
+
+
+
+====================  =======  =====  ======  ===================  ===========  ==========
+Hop                   Type     Alpha  Weight  Time                 Utilization  Bitterness
+====================  =======  =====  ======  ===================  ===========  ==========
+Belma                 Pellets  10.8   0.7     Boil for 60 minutes  23.8         24        
+French Strisselspalt  Pellets  1.2    1.0     Boil for 10 minutes  8.6          1         
+====================  =======  =====  ======  ===================  ===========  ==========
+
+Pre-boil: 6.5 gal at 1.046
+Post-boil: 5.5 gal at 1.055, 26 IBU
+
+
+Starting gravity: 1.055
+Final gravity: 1.007
+Bitterness: 26 IBU
+Apparent attenutation: 87%
+ABV: 6.3%
+Calories: 184
+Carbohydrates: 14.2 g
+```
