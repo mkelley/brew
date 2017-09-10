@@ -255,7 +255,7 @@ class Brew:
         mashed = ingredients.filter(T.Mash, T.Vorlauf, T.Sparge, T.Lauter)
 
         total_weight = sum([f.weight for f in ingredients])
-        grain_weight = sum([f.weight for f in ingredients.grains])
+        grain_weight = sum([f.weight for f in mashed.grains])  # for water to grist ratio
 
         v_kettle = self.volume(T.Lauter())
         extract = self._extract(ingredients)
