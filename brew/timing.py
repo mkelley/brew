@@ -238,5 +238,5 @@ class Final(Timing):
 
 class Unspecified(Timing):
     """No specific time specified."""
-    name = 'Not applicable'
+    name = ''
     step = -1
