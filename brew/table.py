@@ -34,10 +34,21 @@ class Table:
     def __init__(self, data=None, names=None, format='text'):
         self.data = data
         self.names = names
-        self.colformats = None
+        self._colformats = None
         self.footer = ''
         assert format in ['text', 'html', 'notebook']
         self.format = format
+
+    @property
+    def colformats(self):
+        if self._colformats is None:
+            return ['{}'] * len(self.data)
+        else:
+            return self._colformats
+
+    @colformats.setter
+    def colformats(self, f):
+        self._colformats = f
 
     def __str__(self):
         ncols = len(self.data)
