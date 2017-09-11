@@ -573,9 +573,16 @@ class Ingredients(MutableSequence):
             len(self), len(self.fermentables), len(self.hops))
 
     def __str__(self):
-        s = "Ingredients:\n  "
-        s += "\n  ".join(['[{}] {}'.format(i, f) for i, f in enumerate(self)])
-        return s
+        from .table import Table
+        item, quantity, timing = [], [], []
+        for i in self:
+            item.append(i.name)
+            quantity.append(i.quantity)
+            timing.append(str(i.timing))
+
+        tab = Table(data=(item, quantity, timing),
+                    names=('Item', 'Quantity', 'Timing'))
+        return str(tab)
     
     def __reversed__(self, *args, **kwargs):
         return reversed(self._list)
