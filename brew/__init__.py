@@ -9,6 +9,7 @@ brew --- A homebrew calculator.
 from . import ingredients
 from . import timing
 from . import brew
+from . import util
 
 from .brew import *
 from .ingredients import *

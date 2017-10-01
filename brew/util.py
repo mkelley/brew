@@ -246,18 +246,20 @@ def real_extract(og, fg):
     q = 0.22 + 0.001 * oe
     return (q * oe + ae) / (1 + q)
 
-def refractometer_correct(sg0, sg_r):
+def refractometer_correct(sg0, sg_r, wcf=1.0):
     """Correct final gravity measurment from refractometer.
 
     Parameters
     ----------
     sg0 : float
       Starting specific gravity.
-    sg_r : float
-      Raw (uncorrected) specific gravity measurement from refractometer.
+    sg_m : float
+      Measured (apparent) specific gravity from refractometer.
+    wcf : float, optional
+      Wort correction factor.
 
     """
-    return 1 - 0.002349 * sg2brix(sg0) + 0.006276 * sg2brix(sg_r)
+    return 1 - 0.002349 * sg2brix(sg0) + 0.006276 * sg2brix(sg_r) / wcf
 
 def sg2brix(sg):
     """Specific gravity to degrees brix
@@ -274,6 +276,21 @@ def sg2brix(sg):
     """
     return ((182.461 * sg - 775.6821) * sg + 1262.7794) * sg - 669.5622
 
+def plato2sg(E):
+    """Degrees Plato to specific gravity.
+
+    Parmeters
+    ---------
+    E : float
+      Extract in degrees plato.
+
+    Notes
+    -----
+    Brew by the Numbers, Hall, Zymurgy, Summer 1995.
+    
+    """
+    return (((4.3074e-8 * E) + 1.3488e-5) * E + 0.0038661) * E + 1.00001
+
 def sg2plato(sg):
     """Extract in degrees Plato.
 
@@ -286,7 +303,7 @@ def sg2plato(sg):
 
     Notes
     -----
-    Brew by the Numbers, Hall, Zymergy, Summer 1995.
+    Brew by the Numbers, Hall, Zymurgy, Summer 1995.
 
     """
     return -668.962 + 1262.45 * sg - 776.43 * sg**2 + 182.94 * sg**3
