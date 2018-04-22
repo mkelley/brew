@@ -42,6 +42,7 @@ class PPG(Enum):
     EnglishTwoRow = "English 2-row", 38
     EnglishMild = "English mild", 37
     MarisOtter = "Maris Otter", 38
+    GoldenPromise = "Golden Promise", 38
     WheatMalt = "Wheat malt", 38  # midwest / german / belgian
     AmericanRyeMalt = "American rye malt", 36
     GermanRyeMalt = "German rye malt", 38
@@ -116,6 +117,8 @@ class PPG(Enum):
 
 class CultureBank(Enum):
     # name, min, max apparent attenutation
+    AmericanAleUS05 = ('US-05, American Ale', 81, 81)
+    AmericanAle1056 = ('WY1056, American Ale', 73, 77)
     CaliforniaAle = ('WLP001, California Ale', 73, 80)
     EnglishAle = ('WLP002, English Ale', 63, 70)
     IrishAle = ('WLP004, Irish Ale', 69, 74)
@@ -146,7 +149,8 @@ class CultureBank(Enum):
     SourMix1 = ('WLP655, Sour Mix 1', 85, 100)
     FlemishAleBlend = ('WLP665, Flemish Ale Blend', 80, 100)
     AmericanFarmhouseBlend = ('WLP670, American Farmhouse Blend', 75, 82)
-    AmericanAle = ('US-05, American Ale', 81, 81)
+    LactobacillusBrevis = ('WLP672, Lactobacillus Brevis', 80, 80)
+    LactobacillusDelbrueckii = ('WLP677, Lactobacillus Delbrueckii', 75, 82)
     HouseSourMix = ('House sour mix', 86, 86)
     BottleDregs = ('Bottle dregs', 0, 100)
 
@@ -186,13 +190,13 @@ class Culture(Ingredient):
     Parameters
     ----------
     culture : CultureBank
-      The type of culture to propagate.
+      Type of culture to propagate.
     quantity : string, optional
-      The quantity of the culture.
+      Quantity of the culture.
     timing : Timing, optional
-      The timing of the addition.
+      Timing of the addition.
     desc : string, optional
-      A long-form description.
+      Long-form description.
     
     """
 
@@ -345,12 +349,13 @@ class Hop(Ingredient):
     """
 
     def __init__(self, name, alpha, weight, timing=None, whole=False,
-                 desc=None):
+                 beta=None, desc=None):
         assert isinstance(name, str)
         assert isinstance(alpha, (float, int))
         assert isinstance(weight, (float, int))
         assert isinstance(timing, T.Timing)
         assert isinstance(whole, bool)
+        assert isinstance(beta, (float, int, type(None)))
         assert isinstance(desc, (str, type(None)))
 
         self.name = name
@@ -358,14 +363,19 @@ class Hop(Ingredient):
         self.weight = weight
         self.timing = timing
         self.whole = whole
+        self.beta = beta
         self.desc = name if desc is None else desc
 
     def __repr__(self):
         return '<Hop: {}>'.format(str(self))
 
     def __str__(self):
-        return '{} ({}% α), {} at {}'.format(
-            self.name, self.alpha, self.quantity, self.timing)
+        if self.beta is None:
+            beta = ''
+        else:
+            beta = ', {}% β'.format(self.beta)
+        return '{} ({}% α{}), {} at {}'.format(
+            self.name, self.alpha, beta, self.quantity, self.timing)
 
     @property
     def quantity(self):
@@ -508,7 +518,7 @@ class Water(Ingredient):
     ----------
     name : string
       The name (brief description) of the water.
-    volume : float
+    volume : float, optional
       The volume in gallons.
     timing : Timing
       The time of addition.
@@ -517,7 +527,7 @@ class Water(Ingredient):
 
     """
     
-    def __init__(self, name, volume, timing, desc=None):
+    def __init__(self, name, volume=0, timing=T.Unspecified(), desc=None):
         assert isinstance(name, str)
         assert isinstance(volume, (float, int))
         assert isinstance(timing, T.Timing)
