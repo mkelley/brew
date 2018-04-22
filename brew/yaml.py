@@ -154,3 +154,39 @@ def hop_constructor(loader, node):
     return ingredients.Hop(name, alpha, weight, **data)
 yaml.add_representer(ingredients.Hop, hop_representer)
 yaml.add_constructor('!Hop', hop_constructor)
+
+########################################################################
+class GravityMeasurement(yaml.YAMLObject):
+    yaml_tag = '!GravityMeasurement'
+    def __init__(self, date, gravity, T, note):
+        self.date = date
+        self.gravity = gravity
+        self.T = T
+        self.note = note
+
+    def __repr__(self):
+        return '{}(date={}, gravity={}, T={}, note={})'.format(
+            self.__class__.__name__, self.date, self.gravity, self.T, self.note)
+
+    def cor_grav(self, og):
+        return self.gravity
+
+    def ap_atten(self, og):
+        return '{:.0f}'.format((og - float(self.cor_grav(og))) / (og - 1) * 100)
+
+    def abv(self, og):
+        from .util import abv
+        return '{:.1f}'.format(abv(og, float(self.cor_grav(og))))
+
+class Hydrometer(GravityMeasurement):
+    yaml_tag = '!Hydrometer'
+    def cor_grav(self, og):
+        from .util import hydrometer_correct
+        return '{:.3f}'.format(hydrometer_correct(self.gravity, self.T))
+
+########################################################################
+class Refractometer(GravityMeasurement):
+    yaml_tag = '!Refractometer'
+    def cor_grav(self, og):
+        from .util import refractometer_correct
+        return '{:.3f}'.format(refractometer_correct(og, self.gravity))
