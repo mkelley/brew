@@ -353,7 +353,7 @@ class Hop(Ingredient):
         assert isinstance(name, str)
         assert isinstance(alpha, (float, int))
         assert isinstance(weight, (float, int))
-        assert isinstance(timing, T.Timing)
+        assert isinstance(timing, (T.Timing, type(None)))
         assert isinstance(whole, bool)
         assert isinstance(beta, (float, int, type(None)))
         assert isinstance(desc, (str, type(None)))
@@ -375,7 +375,8 @@ class Hop(Ingredient):
         else:
             beta = ', {}% β'.format(self.beta)
         return '{} ({}% α{}), {} at {}'.format(
-            self.name, self.alpha, beta, self.quantity, self.timing)
+            self.name, self.alpha, beta, self.quantity,
+            self.timing if self.timing is not None else T.Unspecified())
 
     @property
     def quantity(self):
