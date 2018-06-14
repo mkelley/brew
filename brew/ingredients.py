@@ -112,7 +112,6 @@ class PPG(Enum):
     Rapadura = "Rapadura", 40
     RiceExtract = "Rice extract", 34
     WhiteSorghumSyrup = "White sorghum syrup", 38
-    
     PumpkinPuree = "Pumpkin puree", 2
 
 class CultureBank(Enum):
@@ -120,10 +119,11 @@ class CultureBank(Enum):
     AmericanAleUS05 = ('US-05, American Ale', 81, 81)
     AmericanAle1056 = ('WY1056, American Ale', 73, 77)
     CaliforniaAle = ('WLP001, California Ale', 73, 80)
+    CaliforniaAleV = ('WLP051, California Ale V', 70, 75)
     EnglishAle = ('WLP002, English Ale', 63, 70)
     IrishAle = ('WLP004, Irish Ale', 69, 74)
     DryEnglishAle = ('WLP007, Dry English Ale', 70, 80)
-    CaliforniaAleV = ('WLP051, California Ale V', 70, 75)
+    Nottingham = ('Danstar Nottingham', 70, 80)  # guess
     FrenchAle = ('WLP072, French Ale', 68, 75)
     CreamAleBlend = ('WLP080, Cream Ale Blend', 75, 80)
     Hefeweizen = ('WLP300, Hefeweizen', 72, 76)
@@ -135,10 +135,11 @@ class CultureBank(Enum):
     BelgianSaisonII = ('WLP566, Belgian Saison II', 78, 85)
     BelgianStyleSaison = ('WLP568, Belgian Style Saison', 70, 80)
     BelgianGoldenAle = ('WLP570, Belgian Golden Ale', 73, 78)
+    BelgianStyleAleBlend = ('WLP575, Belgian Style Ale Blend', 74, 80)
     BelgianSaisonIII = ('WLP585, Belgian Saison III', 70, 74)
     TrappistHighGravity = ('WY3787, Trappist Style High Gravity', 74, 78)
-    FrenchSaisonWhiteLabs = ('WLP590, French Saison', 73, 80)
-    FrenchSaisonWyeast = ('WY3711, French Saison', 77, 83)
+    FrenchSaison590 = ('WLP590, French Saison', 73, 80)
+    FrenchSaison3711 = ('WY3711, French Saison', 77, 83)
     SanFranciscoLager = ('WLP810, San Francisco Lager', 65, 70)
     OktoberfestLager = ('WLP820, Oktoberfest/Märzen Lager', 65, 73)
     SacchromycesBruxellensisTrois = ('WLP644, Sacchromyces bruxellensis Trois', 85, 100)
@@ -151,7 +152,7 @@ class CultureBank(Enum):
     AmericanFarmhouseBlend = ('WLP670, American Farmhouse Blend', 75, 82)
     LactobacillusBrevis = ('WLP672, Lactobacillus Brevis', 80, 80)
     LactobacillusDelbrueckii = ('WLP677, Lactobacillus Delbrueckii', 75, 82)
-    HouseSourMix = ('House sour mix', 86, 86)
+    HouseSourMixI = ('House sour mix I', 86, 86)
     BottleDregs = ('Bottle dregs', 0, 100)
 
 class Ingredient:
@@ -189,19 +190,20 @@ class Culture(Ingredient):
 
     Parameters
     ----------
-    culture : CultureBank
-      Type of culture to propagate.
+    culture : CultureBank or tuple
+      Culture to propagate.  May be from the `CultureBank` or a tuple:
+      (name, min apparent attenuation, max apparent attenuation).
     quantity : string, optional
       Quantity of the culture.
     timing : Timing, optional
       Timing of the addition.
     desc : string, optional
       Long-form description.
-    
+
     """
 
     def __init__(self, culture, quantity='1', timing=T.Primary(), desc=None):
-        assert culture in CultureBank
+        assert isinstance(culture, CultureBank)
         assert isinstance(quantity, str)
         assert isinstance(timing, T.Timing)
         assert isinstance(desc, (str, type(None)))
