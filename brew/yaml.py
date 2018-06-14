@@ -7,7 +7,7 @@ from . import timing
 ########################################################################
 def culture_representer(dumper, item):
     data = {
-        'culture': item.culture,
+        'culture': item.culture.name,
         'quantity': item.quantity,
         'timing': item.timing,
         'desc': item.desc,
@@ -36,7 +36,7 @@ def ingredient_representer(name):
     def rep(dumper, item):
         data = {
             'name': item.name,
-            'quantity': item.ppg,
+            'quantity': item.quantity,
             'timing': item.timing,
             'desc': item.desc,
         }
