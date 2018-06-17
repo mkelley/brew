@@ -10,6 +10,7 @@ __all__ = [
     'Brew',
 ]
 
+
 class Brew:
     """Brew some beer.
 
@@ -70,7 +71,7 @@ class Brew:
 
         assert isinstance(ingredients, Ingredients)
         assert isinstance(target_volume, (float, int))
-        
+
         self.ingredients = ingredients
         self.target_volume = float(target_volume)
         self.config = get_config(parameter_sets)
@@ -81,8 +82,10 @@ class Brew:
         self['absorption'] = float(self['absorption'])
         self['T_grain'] = int(self['T_grain'])
         self['T_water'] = int(self['T_water'])
-        self['T_rest'] = tuple(self['T_rest']) if isinstance(self['T_rest'], Iterable) else (self['T_rest'],)
-        self['T_sacc'] = tuple(self['T_sacc']) if isinstance(self['T_sacc'], Iterable) else (self['T_sacc'],)
+        self['T_rest'] = tuple(self['T_rest']) if isinstance(
+            self['T_rest'], Iterable) else (self['T_rest'],)
+        self['T_sacc'] = tuple(self['T_sacc']) if isinstance(
+            self['T_sacc'], Iterable) else (self['T_sacc'],)
         assert isinstance(self['mash_out'], bool)
         self['efficiency'] = float(self['efficiency'])
         self['mlt_gap'] = float(self['mlt_gap'])
@@ -91,12 +94,13 @@ class Brew:
         self['r_boil'] = float(self['r_boil'])
         assert isinstance(self['hop_stand'], bool)
         self['kettle_gap'] = float(self['kettle_gap'])
- 
+
     def __getitem__(self, k):
         return self.config[k]
 
     def __setitem__(self, k, v):
-        assert k in self.config, '{} is not parameter ({})'.format(k, ', '.join(self.config.keys()))
+        assert k in self.config, '{} is not parameter ({})'.format(
+            k, ', '.join(self.config.keys()))
         self.config[k] = v
 
     @property
@@ -115,7 +119,7 @@ class Brew:
 
         """
         return self['hop_stand'] or (len(self.ingredients.hop_stand) > 0)
-        
+
     def volume(self, time, upto=False):
         """Volume at time in gallons.
 
@@ -134,7 +138,7 @@ class Brew:
             ingredients = self.ingredients.upto(time)
         else:
             ingredients = self.ingredients.at(time)
-            
+
         volume = sum([i.volume for i in ingredients if hasattr(i, 'volume')])
         volume += self.target_volume
 
@@ -146,13 +150,13 @@ class Brew:
             volume += t / 60 * self['r_boil']
         elif time < T.Boil(self['boil_time']):
             volume += self['boil_time'] / 60 * self['r_boil']
-        
+
         if time < T.Lauter():
             weight = sum([f.weight for f in ingredients.grains])
             volume += self['mlt_gap'] + weight * self['absorption'] / 4
 
         return volume
-        
+
     def _extract(self, ingredients):
         """Helper function for extracts.
 
@@ -163,7 +167,7 @@ class Brew:
 
         """
         from . import timing as T
-        
+
         extract = [f.extract(self['efficiency']) for f in ingredients]
         return extract
 
@@ -185,7 +189,7 @@ class Brew:
             ingredients = self.ingredients.fermentables.upto(time)
         else:
             ingredients = self.ingredients.fermentables.at(time)
-            
+
         return self._extract(ingredients)
 
     def grain_extract(self):
@@ -209,10 +213,10 @@ class Brew:
           Sparge water volume, gallons.
 
         """
-        
+
         from . import timing as T
         from .util import strike_water, infusion_volume
-        
+
         grain_weight = sum([f.weight for f in
                             self.ingredients.at(T.Sparge()).grains])
         v_infusion = []
@@ -255,13 +259,14 @@ class Brew:
         mashed = ingredients.filter(T.Mash, T.Vorlauf, T.Sparge, T.Lauter)
 
         total_weight = sum([f.weight for f in ingredients])
-        grain_weight = sum([f.weight for f in mashed.grains])  # for water to grist ratio
+        # for water to grist ratio
+        grain_weight = sum([f.weight for f in mashed.grains])
 
         v_kettle = self.volume(T.Lauter())
         extract = self._extract(ingredients)
         mash_extract = sum(self._extract(mashed))
         total_extract = sum(extract)
-        
+
         preboil_sg = 1 + mash_extract / v_kettle / 1000
         wort = Wort(preboil_sg, v_kettle)
 
@@ -279,6 +284,7 @@ class Brew:
                     names=('Grain/Adjunct', 'Timing', 'Weight',
                            'Weight Fraction', 'PPG', 'Extract',
                            'Extract Fraction'),
+                    caption='Mash',
                     format=_default_format)
         tab.colformats = ('{}', '{}', '{:.3f}', '{:.1%}', '{:d}', '{:.1f}',
                           '{:.1%}')
@@ -287,11 +293,14 @@ Efficiency: {:.0%}
 Pre-boil specific gravity: {:.3f}
 '''.format(v_kettle, self['efficiency'], preboil_sg)
 
+        if _default_format == 'yaml':
+            print('    mash-and-lauter:')
         print(tab)
-        
+
         # Infusion schedule table
         tab = Table(data=(self.T_mash, T_infusion, v_infusion),
                     names=('T mash (F)', 'T water (F)', 'Volume (gal)'),
+                    caption='Lauter and sparge',
                     format=_default_format)
         tab.colformats = ('{:.0f}', '{:.0f}', '{:.2f}')
         tab.footer = '''Total mash water: {:.1f} gal ({:.1f} qt/lb)
@@ -324,18 +333,18 @@ Collect {:.1f} gal of wort
         from . import timing as T
         from .table import Table
         from . import _default_format
-        
+
         if wort is None:
             wort = self.mash()
-        
+
         v_preboil = wort.volume
         v_postboil = self.volume(T.Primary(), upto=True)
 
         sg_preboil = wort.gravity
-        
+
         ex_postboil = sum(self.extract(T.Primary(), upto=True))
         sg_postboil = 1 + ex_postboil / v_postboil / 1000
-        
+
         util = []
         bit = []
         hops = self.ingredients.hops
@@ -345,7 +354,7 @@ Collect {:.1f} gal of wort
                                hop_stand=self.hop_stand)
             util.append(r[0])
             bit.append(r[1])
-        
+
         # Bitterness table
         tab = Table(
             data=([hop.name for hop in hops],
@@ -357,6 +366,7 @@ Collect {:.1f} gal of wort
                   bit),
             names=('Hop', 'Type', 'Alpha', 'Weight', 'Time', 'Utilization',
                    'Bitterness'),
+            caption='Hops',
             format=_default_format)
         tab.colformats = ('{}', '{}', '{:.1f}', '{:.1f}', '{}', '{:.1f}',
                           '{:.0f}')
@@ -366,8 +376,10 @@ Post-boil: {} gal at {:.3f}, {:.0f} IBU
         if self.hop_stand:
             tab.footer += '\nHop stand'
 
+        if _default_format == 'yaml':
+            print('    hopping:')
         print(tab)
-        
+
         return Wort(sg_postboil, v_postboil, sum(bit))
 
     def ferment(self, wort=None, grain_attenuation=None):
@@ -379,7 +391,7 @@ Post-boil: {} gal at {:.3f}, {:.0f} IBU
           Ferment this wort, else use `boil`.
         grain_attenuation : float, optional
           Force fermentation to match this apparent attenuation for grains.
-        
+
         Returns
         -------
         beer : Beer
@@ -407,8 +419,9 @@ Post-boil: {} gal at {:.3f}, {:.0f} IBU
         sg = 1 + ex / v_final / 1000
 
         grain_sg = 1 + (sg - 1) * sum(self.grain_extract()) / ex_final
-        unfermentable_sg = 1 + (sg - 1) * sum(self.unfermentable_extract()) / ex_final
-        
+        unfermentable_sg = 1 + (sg - 1) * \
+            sum(self.unfermentable_extract()) / ex_final
+
         # if a mixed fermentation, use the highest attenuation
         beer = []
         for culture in self.ingredients.cultures:
@@ -434,8 +447,9 @@ Calories: {cals:.0f}
 Carbohydrates: {carbs:.1f} g
 '''.format(sg=beer.sg, fg=beer.fg, bit=bit, aa=beer.app_attenuation,
            abv=beer.abv, cals=beer.calories, carbs=beer.carbohydrates))
-        
+
         return beer
+
 
 class Wort:
     """Wort.
@@ -450,7 +464,7 @@ class Wort:
       Bitterness in IBUs.
 
     """
-    
+
     def __init__(self, gravity, volume, bitterness=None):
         self.gravity = gravity
         self.volume = volume
@@ -465,6 +479,7 @@ class Wort:
     def plato(self):
         from .util import sg2plato
         return sg2plato(self.gravity)
+
 
 class Beer:
     """The final product.

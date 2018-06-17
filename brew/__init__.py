@@ -17,6 +17,7 @@ from .timing import *
 
 _default_format = 'text'  # default format for tables
 
+
 def set_format(format):
     """Set the default format for summary output.
 
@@ -27,5 +28,5 @@ def set_format(format):
 
     """
     global _default_format
-    assert format in ['text', 'html', 'notebook']
+    assert format in ['text', 'html', 'notebook', 'yaml']
     _default_format = format

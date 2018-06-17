@@ -10,6 +10,7 @@ __all__ = [
     'Table',
 ]
 
+
 class Table:
     """Tabular data formatter.
 
@@ -19,24 +20,27 @@ class Table:
       The data as columns.
     names : array of strings
       The names of each column.
+    caption : string, optional
+      Table caption for yaml format.
     format : string, optional
-      The table format for string output: text, html, or notebook.
-    
+      The table format for string output: text, html, notebook, or yaml.
+
     Attributes
     ----------
     colformat : array of strings
       Formats for the values in each column.
     footer : string
       The table footer.
-    
+
     """
 
-    def __init__(self, data=None, names=None, format='text'):
+    def __init__(self, data=None, names=None, caption=None, format='text'):
         self.data = data
-        self.names = names
+        self.names = list(names)
+        self.caption = caption
         self._colformats = None
         self.footer = ''
-        assert format in ['text', 'html', 'notebook']
+        assert format in ['text', 'html', 'notebook', 'yaml']
         self.format = format
 
     @property
@@ -51,8 +55,9 @@ class Table:
         self._colformats = f
 
     def __str__(self):
+        from collections import OrderedDict
         ncols = len(self.data)
-        
+
         formatted_tab = []
         for row in zip(*self.data):
             formatted_row = [f.format(c) for f, c in zip(self.colformats, row)]
@@ -82,9 +87,26 @@ class Table:
 </table>
 """.format(tbody='\n    '.join(tbody))
 
-        else:
-            tab += '\n'
+        elif self.format == 'yaml':
+            import textwrap
+            import yaml
 
+            tab = {}
+            tab['type'] = 'table'
+            tab['caption'] = self.caption
+            tab['headings'] = self.names
+            tab['footer'] = {}
+            tab['footer']['rows'] = []
+            for row in self.footer.splitlines():
+                tab['footer']['rows'].append({
+                    'data': row,
+                    'colspan': len(self.names)
+                })
+            tab['rows'] = formatted_tab
+
+            # hardcoded indent for my brewlog
+            tab = textwrap.indent(yaml.dump([tab]), ' ' * 6)
+        else:
             colsize = []
             _rows = [self.names] + formatted_tab
             for cell in range(ncols):
