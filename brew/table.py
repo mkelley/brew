@@ -98,10 +98,10 @@ class Table:
             tab['footer'] = {}
             tab['footer']['rows'] = []
             for row in self.footer.splitlines():
-                tab['footer']['rows'].append({
+                tab['footer']['rows'].append([{
                     'data': row,
                     'colspan': len(self.names)
-                })
+                }])
             tab['rows'] = formatted_tab
 
             # hardcoded indent for my brewlog

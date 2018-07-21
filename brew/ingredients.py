@@ -31,6 +31,8 @@ __all__ = [
 # Source: Home Brewer's Companion
 # Beersmith: http://www.beersmith.com/Grains/Grains/GrainList.htm
 # name, PPG
+
+
 class PPG(Enum):
     AcidMalt = "Acid malt", 27  # (Germany) Beersmith
     AmericanTwoRow = "American 2-row", 37
@@ -74,7 +76,7 @@ class PPG(Enum):
     EnglishAmber = "English amber", 33
     BelgianSpecialB = "Belgian Special B", 35
     AmericanChocolate = "American chocolate", 28  # Beersmith
-    EnglishPaleChocolate = "English pale chocolate", 34 # Beersmith
+    EnglishPaleChocolate = "English pale chocolate", 34  # Beersmith
     EnglishChocolate = "English chocolate", 34  # Beersmith
     Carahell = "Carahell", 35  # guess
     Black = "Black", 25  # Beersmith
@@ -94,7 +96,7 @@ class PPG(Enum):
     WheatFlaked = "Wheat, flaked", 33
     WheatRaw = "Wheat, raw", 37
     WheatTorrified = "Wheat, torrified", 35
-    
+
     AgaveSyrup = "Agave syrup", 34
     BelgianCandiSugar = "Belgian candi sugar", 46
     BelgianCandiSyrup = "Belgian candi syrup", 36
@@ -114,8 +116,9 @@ class PPG(Enum):
     WhiteSorghumSyrup = "White sorghum syrup", 38
     PumpkinPuree = "Pumpkin puree", 2
 
+
 class CultureBank(Enum):
-    # name, min, max apparent attenutation
+    # name, min, max apparent attenutation, url
     AmericanAleUS05 = ('US-05, American Ale', 81, 81)
     AmericanAle1056 = ('WY1056, American Ale', 73, 77)
     CaliforniaAle = ('WLP001, California Ale', 73, 80)
@@ -142,9 +145,11 @@ class CultureBank(Enum):
     FrenchSaison3711 = ('WY3711, French Saison', 77, 83)
     SanFranciscoLager = ('WLP810, San Francisco Lager', 65, 70)
     OktoberfestLager = ('WLP820, Oktoberfest/Märzen Lager', 65, 73)
-    SacchromycesBruxellensisTrois = ('WLP644, Sacchromyces bruxellensis Trois', 85, 100)
+    SacchromycesBruxellensisTrois = (
+        'WLP644, Sacchromyces bruxellensis Trois', 85, 100)
     BrettanomycesClaussenii = ('WLP645, Brettanomyces claussenii', 85, 100)
-    BrettanomycesBruxellensisTroisVrai = ('WLP648, Brettanomyces bruxellensis Trois Vrai', 85, 100)
+    BrettanomycesBruxellensisTroisVrai = (
+        'WLP648, Brettanomyces bruxellensis Trois Vrai', 85, 100)
     BrettanomycesBruxellensis = ('WLP650, Brettanomyces bruxellensis', 85, 100)
     BrettanomycesLambicus = ('WLP653, Brettanomyces lambicus', 85, 100)
     SourMix1 = ('WLP655, Sour Mix 1', 85, 100)
@@ -154,6 +159,9 @@ class CultureBank(Enum):
     LactobacillusDelbrueckii = ('WLP677, Lactobacillus Delbrueckii', 75, 82)
     HouseSourMixI = ('House sour mix I', 86, 86)
     BottleDregs = ('Bottle dregs', 0, 100)
+    Gnome = ('B45, Gnome', 72, 76,
+             'http://www.imperialyeast.com/organic-yeast-strains/')
+
 
 class Ingredient:
     """Beer ingredient.
@@ -170,7 +178,7 @@ class Ingredient:
       A long-form description of the ingredient.
 
     """
-    
+
     def __init__(self, name, quantity, timing=T.Unspecified(), desc=None):
         assert isinstance(name, str)
         assert isinstance(quantity, str)
@@ -178,12 +186,13 @@ class Ingredient:
         self.quantity = quantity
         self.timing = timing
         self.desc = name if desc is None else desc
-        
+
     def __repr__(self):
         return "<{}: {}>".format(type(self).__name__, str(self))
 
     def __str__(self):
         return "{}, {} at {}".format(self.name, self.quantity, self.timing)
+
 
 class Culture(Ingredient):
     """Yeast or other cultures, ready for fermentation.
@@ -213,6 +222,7 @@ class Culture(Ingredient):
         self.name = self.culture.value[0]
         self.attenuation = (self.culture.value[1], self.culture.value[2])
         self.desc = self.name if desc is None else desc
+
 
 class Fermentable(Ingredient):
     """Grains and adjuncts.
@@ -264,13 +274,14 @@ class Fermentable(Ingredient):
             return '1.00 lb'
         else:
             return "{:.2f} lbs".format(self.weight)
-    
+
     def extract(self, mash_efficiency):
         """Amount of extract per gallon."""
         ex = self.weight * self.ppg
         if self.timing < T.Lauter():
             ex *= mash_efficiency
         return ex
+
 
 class Unfermentable(Ingredient):
     """Affects gravity, but does not ferment out.
@@ -322,13 +333,14 @@ class Unfermentable(Ingredient):
             return '1.00 lb'
         else:
             return "{:.2f} lbs".format(self.weight)
-    
+
     def extract(self, mash_efficiency):
         """Amount of extract per gallon."""
         ex = self.weight * self.ppg
         if self.timing < T.Lauter():
             ex *= mash_efficiency
         return ex
+
 
 class Hop(Ingredient):
     """Hop addition.
@@ -383,7 +395,7 @@ class Hop(Ingredient):
     @property
     def quantity(self):
         return "{:.2f} oz".format(self.weight)
-    
+
     def bitterness(self, gravity, volume, boil=None, hop_stand=False):
         """Compute bitterness.
 
@@ -418,7 +430,8 @@ class Hop(Ingredient):
         assert isinstance(volume, (float, int))
 
         if isinstance(self.timing, (T.FirstWort, T.Mash)):
-            assert isinstance(boil, (float, int)), 'Boil time is required for mash and first-wort hops.'
+            assert isinstance(
+                boil, (float, int)), 'Boil time is required for mash and first-wort hops.'
             t = boil + 5
         elif isinstance(self.timing, T.HopStand):
             t = 5
@@ -433,27 +446,33 @@ class Hop(Ingredient):
 
         return util, bit
 
+
 class Spice(Ingredient):
     pass
 
+
 class Grain(Fermentable):
     """A mashable grain or similar."""
+
     def __init__(self, ppg, weight, timing=T.Mash(), name=None, desc=None):
         Fermentable.__init__(self, ppg, weight, timing=timing, name=name,
                              desc=desc)
 
+
 class Sugar(Fermentable):
     """Sugars, syrups, and similar 100% fermentables."""
+
     def __init__(self, ppg, weight, timing=T.Boil(0), name=None, desc=None):
         Fermentable.__init__(self, ppg, weight, timing=timing, name=name,
                              desc=desc)
+
 
 class Fruit(Fermentable):
     """Fermentable fruit forms.
 
     Adds volume to the wort.  If this is the wrong behavior (e.g., a
     dried fruit like raisins), set the density to 0?
-    
+
     Parameters
     ----------
     name : string
@@ -508,11 +527,14 @@ class Fruit(Fermentable):
     def volume(self):
         return self.weight / self.density / 8
 
+
 class Other(Ingredient):
     pass
 
+
 class Priming(Ingredient):
     pass
+
 
 class Water(Ingredient):
     """Water.
@@ -529,7 +551,7 @@ class Water(Ingredient):
       A long-form description.
 
     """
-    
+
     def __init__(self, name, volume=0, timing=T.Unspecified(), desc=None):
         assert isinstance(name, str)
         assert isinstance(volume, (float, int))
@@ -548,6 +570,7 @@ class Water(Ingredient):
         else:
             return "{:.2f} gal".format(self.volume)
 
+
 class Ingredients(MutableSequence):
     """A collection of ingredients.
 
@@ -565,19 +588,19 @@ class Ingredients(MutableSequence):
 
     def __contains__(self, value):
         return value in self._list
-        
+
     def __delitem__(self, k):
         del self._list[k]
 
     def __iadd__(self, *args, **kwargs):
         self._list.__iadd__(*args, **kwargs)
-        
+
     def __iter__(self):
         return iter(self._list)
-        
+
     def __getitem__(self, k):
         return self._list[k]
-        
+
     def __len__(self, *args, **kwargs):
         return len(self._list)
 
@@ -596,10 +619,10 @@ class Ingredients(MutableSequence):
         tab = Table(data=(item, quantity, timing),
                     names=('Item', 'Quantity', 'Timing'))
         return str(tab)
-    
+
     def __reversed__(self, *args, **kwargs):
         return reversed(self._list)
-        
+
     def __setitem__(self, index, value):
         assert isinstance(value, Ingredient)
         MutableSequence.__setitem__(self, index, value)
@@ -609,10 +632,10 @@ class Ingredients(MutableSequence):
 
     def extend(self, iterable):
         self._list.extend(iterable)
-        
+
     def count(self, *args):
         return self._list.count(*args)
-        
+
     def index(self, *args):
         return self._list(*args)
 
@@ -621,7 +644,7 @@ class Ingredients(MutableSequence):
 
     def pop(self, *args):
         return self._list.pop(*args)
-        
+
     def remove(self, v):
         self._list.remove(v)
 
@@ -634,7 +657,7 @@ class Ingredients(MutableSequence):
         Parameters
         ----------
         time : Timing
-        
+
         """
         return Ingredients([i for i in self if i.timing < time])
 
@@ -644,7 +667,7 @@ class Ingredients(MutableSequence):
         Parameters
         ----------
         time : Timing
-        
+
         """
         return Ingredients([i for i in self if i.timing <= time])
 
@@ -654,26 +677,26 @@ class Ingredients(MutableSequence):
         Parameters
         ----------
         time : Timing
-        
+
         """
         return Ingredients([i for i in self if i.timing > time])
 
     @property
     def mash(self):
         return Ingredients(list(filter(lambda v: isinstance(v.timing, T.Mash), self)))
-        
+
     @property
     def vorlauf(self):
         return Ingredients(list(filter(lambda v: isinstance(v.timing, T.Vorlauf), self)))
-        
+
     @property
     def first_wort(self):
         return Ingredients(list(filter(lambda v: isinstance(v.timing, T.FirstWort), self)))
-        
+
     @property
     def boil(self):
         return Ingredients(list(filter(lambda v: isinstance(v.timing, T.Boil), self)))
-    
+
     @property
     def hop_stand(self):
         return Ingredients(list(filter(lambda v: isinstance(v.timing, T.HopStand), self)))
@@ -681,11 +704,11 @@ class Ingredients(MutableSequence):
     @property
     def primary(self):
         return Ingredients(list(filter(lambda v: isinstance(v.timing, T.Primary), self)))
-        
+
     @property
     def secondary(self):
         return Ingredients(list(filter(lambda v: isinstance(v.timing, T.Secondary), self)))
-        
+
     @property
     def packaging(self):
         return Ingredients(list(filter(lambda v: isinstance(v.timing, T.Packaging), self)))
@@ -697,7 +720,7 @@ class Ingredients(MutableSequence):
     @property
     def unfermentables(self):
         return self.filter(Unfermentable)
-    
+
     @property
     def grains(self):
         return self.filter(Grain)
@@ -713,11 +736,11 @@ class Ingredients(MutableSequence):
     @property
     def fruits(self):
         return self.filter(Fruit)
-    
+
     @property
     def hops(self):
         return self.filter(Hop)
-    
+
     @property
     def cultures(self):
         return self.filter(Culture)
@@ -733,11 +756,11 @@ class Ingredients(MutableSequence):
         """
 
         ingredients = self
-        
+
         if any([issubclass(x, Ingredient) for x in t]):
             i = filter(lambda i: isinstance(i, t), ingredients)
             ingredients = Ingredients(i)
-        
+
         if any([issubclass(x, T.Timing) for x in t]):
             i = filter(lambda i: isinstance(i.timing, t), ingredients)
             ingredients = Ingredients(i)
