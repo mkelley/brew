@@ -5,6 +5,8 @@ from . import ingredients
 from . import timing
 
 ########################################################################
+
+
 def culture_representer(dumper, item):
     data = {
         'culture': item.culture.name,
@@ -13,25 +15,37 @@ def culture_representer(dumper, item):
         'desc': item.desc,
     }
     return dumper.represent_mapping('!Culture', data)
+
+
 def culture_constructor(loader, node):
     data = loader.construct_mapping(node)
     culture = getattr(ingredients.CultureBank, data.pop('culture'))
     if 'name' in data:
         del data['name']
     return ingredients.Culture(culture, **data)
+
+
 yaml.add_representer(ingredients.Culture, culture_representer)
 yaml.add_constructor('!Culture', culture_constructor)
 
 ########################################################################
+
+
 def ppg_representer(dumper, ppg):
     return dumper.represent_scalar('!PPG', ppg.name)
+
+
 def ppg_constructor(loader, node):
     name = loader.construct_scalar(node)
     return getattr(ingredients.PPG, name)
+
+
 yaml.add_representer(ingredients.PPG, ppg_representer)
 yaml.add_constructor('!PPG', ppg_constructor)
 
 ########################################################################
+
+
 def ingredient_representer(name):
     def rep(dumper, item):
         data = {
@@ -42,6 +56,8 @@ def ingredient_representer(name):
         }
         return dumper.represent_mapping(name, data)
     return rep
+
+
 def ingredient_constructor(cls):
     def con(loader, node):
         data = loader.construct_mapping(node)
@@ -49,12 +65,16 @@ def ingredient_constructor(cls):
         quantity = data.pop('quantity', '')
         return cls(name, quantity, **data)
     return con
+
+
 for name in ['Ingredient', 'Spice', 'Other', 'Priming']:
     cls = getattr(ingredients, name)
     yaml.add_representer(cls, ingredient_representer('!' + name))
     yaml.add_constructor('!' + name, ingredient_constructor(cls))
 
 ########################################################################
+
+
 def fermentable_representer(name):
     def rep(dumper, item):
         data = {
@@ -66,6 +86,8 @@ def fermentable_representer(name):
         }
         return dumper.represent_mapping(name, data)
     return rep
+
+
 def fermentable_constructor(cls):
     def con(loader, node):
         data = loader.construct_mapping(node)
@@ -73,12 +95,16 @@ def fermentable_constructor(cls):
         weight = float(data.pop('weight'))
         return cls(ppg, weight, **data)
     return con
+
+
 for name in ['Fermentable', 'Grain', 'Sugar', 'Unfermentable']:
     cls = getattr(ingredients, name)
     yaml.add_representer(cls, fermentable_representer('!' + name))
     yaml.add_constructor('!' + name, fermentable_constructor(cls))
 
 ########################################################################
+
+
 def fruit_representer(dumper, item):
     data = {
         'name': item.name,
@@ -89,16 +115,22 @@ def fruit_representer(dumper, item):
         'desc': item.desc,
     }
     return dumper.represent_mapping(name, data)
+
+
 def fruit_constructor(loader, node):
     data = loader.construct_mapping(node)
     name = data.pop('name')
     sg = data.pop('sg')
     weight = data.pop('weight')
     return ingredients.Fruit(name, sg, weight, **data)
+
+
 yaml.add_representer(ingredients.Fruit, fruit_representer)
 yaml.add_constructor('!Fruit', fruit_constructor)
 
 ########################################################################
+
+
 def water_representer(dumper, item):
     data = {
         'name': item.name,
@@ -107,19 +139,29 @@ def water_representer(dumper, item):
         'desc': item.desc,
     }
     return dumper.represent_mapping(name, data)
+
+
 def water_constructor(loader, node):
     data = loader.construct_mapping(node)
     name = data.pop('name')
     return ingredients.Water(name, **data)
+
+
 yaml.add_representer(ingredients.Water, water_representer)
 yaml.add_constructor('!Water', water_constructor)
 
 ########################################################################
+
+
 def timing_representer(name):
-    def rep(dumper, timing):
-        time = getattr(timing, 'time', None)
-        return dumper.represent_scalar(name, time)
+    def rep(dumper, item):
+        time = getattr(item, 'time', None)
+        if time == 'N/A':
+            time = ''
+        return dumper.represent_scalar(name, str(time), style='plain')
     return rep
+
+
 def timing_constructor(cls):
     def con(loader, node):
         if node.value is '':
@@ -127,6 +169,8 @@ def timing_constructor(cls):
         else:
             return cls(float(node.value))
     return con
+
+
 for name in ['Mash', 'Vorlauf', 'Sparge', 'Lauter', 'FirstWort', 'Boil',
              'HopStand', 'Primary', 'Secondary', 'Packaging', 'Final',
              'Unspecified']:
@@ -135,6 +179,8 @@ for name in ['Mash', 'Vorlauf', 'Sparge', 'Lauter', 'FirstWort', 'Boil',
     yaml.add_constructor('!' + name, timing_constructor(cls))
 
 ########################################################################
+
+
 def hop_representer(dumper, item):
     data = {
         'name': item.name,
@@ -146,18 +192,25 @@ def hop_representer(dumper, item):
         'desc': item.desc,
     }
     return dumper.represent_mapping('!Hop', data)
+
+
 def hop_constructor(loader, node):
     data = loader.construct_mapping(node)
     name = data.pop('name')
     alpha = float(data.pop('alpha'))
     weight = float(data.pop('weight'))
     return ingredients.Hop(name, alpha, weight, **data)
+
+
 yaml.add_representer(ingredients.Hop, hop_representer)
 yaml.add_constructor('!Hop', hop_constructor)
 
 ########################################################################
+
+
 class GravityMeasurement(yaml.YAMLObject):
     yaml_tag = '!GravityMeasurement'
+
     def __init__(self, date, gravity, T, note):
         self.date = date
         self.gravity = gravity
@@ -178,15 +231,20 @@ class GravityMeasurement(yaml.YAMLObject):
         from .util import abv
         return '{:.1f}'.format(abv(og, float(self.cor_grav(og))))
 
+
 class Hydrometer(GravityMeasurement):
     yaml_tag = '!Hydrometer'
+
     def cor_grav(self, og):
         from .util import hydrometer_correct
         return '{:.3f}'.format(hydrometer_correct(self.gravity, self.T))
 
 ########################################################################
+
+
 class Refractometer(GravityMeasurement):
     yaml_tag = '!Refractometer'
+
     def cor_grav(self, og):
         from .util import refractometer_correct
         return '{:.3f}'.format(refractometer_correct(og, self.gravity))
