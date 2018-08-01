@@ -23,6 +23,7 @@ __all__ = [
     'Unspecified',
 ]
 
+
 class Timing(ABC):
     def __init__(self):
         self.time = 'N/A'
@@ -35,31 +36,34 @@ class Timing(ABC):
 
     def __lt__(self, other):
         return self.step < other.step
-    
+
     def __le__(self, other):
         return (self < other) or (self == other)
-    
+
     def __eq__(self, other):
         return self.step == other.step
-    
+
     def __ne__(self, other):
         return not (self == other)
-    
+
     def __gt__(self, other):
         return self.step > other.step
-    
+
     def __ge__(self, other):
         return (self > other) or (self == other)
+
 
 class Mash(Timing):
     """Mash additions."""
     name = 'Mash'
     step = 1
 
+
 class Vorlauf(Timing):
     """Vorlauf additions, typically dark malts."""
     name = 'Vorlauf'
     step = 2
+
 
 class Sparge(Timing):
     """Sparge.
@@ -70,16 +74,18 @@ class Sparge(Timing):
 
     name = 'Sparge'
     step = 3
-    
+
+
 class Lauter(Timing):
     """Get the wort out.
 
     This is the kettle side of the lauter.
 
     """
-    
+
     name = 'Lauter'
     step = 4
+
 
 class FirstWort(Timing):
     """First wort additions, typically hops in the kettle.
@@ -90,16 +96,17 @@ class FirstWort(Timing):
       Total boil length in minutes.
 
     """
-    
+
     name = 'First wort'
     step = 5
 
     def __init__(self, time):
         assert isinstance(time, (float, int))
         self.time = int(time)
-        
+
     def __str__(self):
         return "{}, {}-minute boil".format(self.name, self.time)
+
 
 class Boil(Timing):
     """Boil additions.
@@ -108,9 +115,9 @@ class Boil(Timing):
     ----------
     time : float
       Minutes left in the boil.
-      
+
     """
-    
+
     name = 'Boil'
     step = 6
 
@@ -126,18 +133,19 @@ class Boil(Timing):
             return self.time > other.time
         else:
             return self.step < other.step
-    
+
     def __eq__(self, other):
         if isinstance(other, Boil):
             return self.time == other.time
         else:
             return self.step == other.step
-    
+
     def __gt__(self, other):
         if isinstance(other, Boil):
             return self.time < other.time
         else:
             return self.step > other.step
+
 
 class HopStand(Timing):
     """Hop stands.
@@ -158,29 +166,31 @@ class HopStand(Timing):
 
     def __str__(self):
         return "{} minute {}".format(self.time, self.name)
-    
+
     def __lt__(self, other):
         if isinstance(other, HopStand):
             return self.time < other.time
         else:
             return self.step < other.step
-    
+
     def __eq__(self, other):
         if isinstance(other, HopStand):
             return self.time == other.time
         else:
             return self.step == other.step
-    
+
     def __gt__(self, other):
         if isinstance(other, HopStand):
             return self.time < other.time
         else:
             return self.step < other.step
 
+
 class Primary(Timing):
     """Additions in the primary."""
     name = 'Primary'
     step = 8
+
 
 class Secondary(Timing):
     """Additions in the seconary.
@@ -213,28 +223,31 @@ class Secondary(Timing):
             return self.time < other.time
         else:
             return self.step < other.step
-    
+
     def __eq__(self, other):
         if isinstance(other, Secondary):
             return self.time == other.time
         else:
             return self.step == other.step
-    
+
     def __gt__(self, other):
         if isinstance(other, Secondary):
             return self.time < other.time
         else:
             return self.step < other.step
 
+
 class Packaging(Timing):
     """Additions at packaging."""
     name = 'Packaging'
     step = 10
 
+
 class Final(Timing):
     """The beer is ready!"""
     name = 'Final'
     step = 11
+
 
 class Unspecified(Timing):
     """No specific time specified."""

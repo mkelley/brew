@@ -138,7 +138,7 @@ def water_representer(dumper, item):
         'timing': item.timing,
         'desc': item.desc,
     }
-    return dumper.represent_mapping(name, data)
+    return dumper.represent_mapping('!Water', data)
 
 
 def water_constructor(loader, node):
