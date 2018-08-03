@@ -29,6 +29,7 @@ __all__ = [
     'utilization',
 ]
 
+
 def abv(og, fg):
     """Alcohol by volume.
 
@@ -36,6 +37,7 @@ def abv(og, fg):
 
     """
     return abw(og, fg) * fg / 0.794
+
 
 def abw(og, fg):
     """Alcohol by weight.
@@ -50,11 +52,13 @@ def abw(og, fg):
     re = real_extract(og, fg)
     return (oe - re) / (2.0665 - 0.010665 * oe)
 
+
 def calories(og, fg):
     """Calories per 12 oz."""
     return (calories_alcohol(og, fg)
             + calories_extract(og, fg)
             + calories_protein(og, fg))
+
 
 def calories_alcohol(og, fg):
     """Calories from alcohol per 12 oz.
@@ -65,6 +69,7 @@ def calories_alcohol(og, fg):
 
     return 25.2 * fg * abw(og, fg)
 
+
 def calories_extract(og, fg):
     """Calories from residual sugars per 12 oz.
 
@@ -72,7 +77,8 @@ def calories_extract(og, fg):
 
     """
 
-    return 13.5 * fg * real_extract(og, fg)    
+    return 13.5 * fg * real_extract(og, fg)
+
 
 def calories_protein(og, fg):
     """Calories from protein per 12 oz.
@@ -83,17 +89,20 @@ def calories_protein(og, fg):
 
     return 0.994 * fg * real_extract(og, fg)
 
+
 def carbohydrates(og, fg):
     """Estimated carbohydrates per 12 oz."""
     return calories_extract(og, fg) / 3.8
+
 
 def f2c(T):
     """Fahrenheit to Celcius."""
     return (T - 32) * 5 / 9.
 
+
 def final_gravity(sg, T_sacc, culture):
     """Estimate final gravity.
-    
+
     Parameters
     ----------
     sg : float
@@ -109,7 +118,7 @@ def final_gravity(sg, T_sacc, culture):
     fg : float
 
     """
-    
+
     from collections import Iterable
     from .ingredients import Culture
 
@@ -128,6 +137,7 @@ def final_gravity(sg, T_sacc, culture):
     dT = T - 152
     a = atten - dT
     return sg - (sg - 1) * a / 100
+
 
 def hydrometer_correct(sg, T):
     """Correct hydrometer specific gravity measurment.
@@ -152,9 +162,11 @@ def hydrometer_correct(sg, T):
                  + 2.04052596e-6 * T**2
                  - 2.32820948e-9 * T**3)
 
+
 def ibu(utilization, weight, alpha, volume):
     """Utilization and alpha in percent, weight in oz, volume in gallons."""
     return 0.746 * utilization * weight * alpha / volume
+
 
 def infusion_volume(volume, weight, T, T_target, T_water=200.):
     """Volume of water infusion to reach temperature T_target.
@@ -174,6 +186,7 @@ def infusion_volume(volume, weight, T, T_target, T_water=200.):
 
     """
     return (T_target - T) * (.2 * weight + volume) / (T_water - T)
+
 
 def priming_sugar(T, r, v, fermentable='table sugar'):
     """Weight of sugar for priming.
@@ -217,7 +230,8 @@ def priming_sugar(T, r, v, fermentable='table sugar'):
     }
     assert fermentable in scales
     scale = scales[fermentable]
-    return scale * (0.5360 * v) *  ((r - 3.0378) + (0.050 * T) - (0.0002655 * T**2))
+    return scale * (0.5360 * v) * ((r - 3.0378) + (0.050 * T) - (0.0002655 * T**2))
+
 
 def real_attenuation(og, fg):
     """Real attenuation (%) from original and final gravity.
@@ -232,6 +246,7 @@ def real_attenuation(og, fg):
     re = real_extract(og, fg)
     return (oe - re) / oe * 100.
 
+
 def real_extract(og, fg):
     """Real extract (degrees Plato) from original and final gravity.
 
@@ -245,6 +260,7 @@ def real_extract(og, fg):
     ae = sg2plato(fg)
     q = 0.22 + 0.001 * oe
     return (q * oe + ae) / (1 + q)
+
 
 def refractometer_correct(sg0, sg_r, wcf=1.0):
     """Correct final gravity measurment from refractometer.
@@ -261,6 +277,7 @@ def refractometer_correct(sg0, sg_r, wcf=1.0):
     """
     return 1 - 0.002349 * sg2brix(sg0) + 0.006276 * sg2brix(sg_r) / wcf
 
+
 def sg2brix(sg):
     """Specific gravity to degrees brix
 
@@ -272,9 +289,10 @@ def sg2brix(sg):
     Notes
     -----
     http://www.brewersfriend.com/brix-converter/
-    
+
     """
     return ((182.461 * sg - 775.6821) * sg + 1262.7794) * sg - 669.5622
+
 
 def plato2sg(E):
     """Degrees Plato to specific gravity.
@@ -287,9 +305,10 @@ def plato2sg(E):
     Notes
     -----
     Brew by the Numbers, Hall, Zymurgy, Summer 1995.
-    
+
     """
     return (((4.3074e-8 * E) + 1.3488e-5) * E + 0.0038661) * E + 1.00001
+
 
 def sg2plato(sg):
     """Extract in degrees Plato.
@@ -308,6 +327,7 @@ def sg2plato(sg):
     """
     return -668.962 + 1262.45 * sg - 776.43 * sg**2 + 182.94 * sg**3
 
+
 def strike_water(r, T_grain, T_target):
     """Temperature of strike water.
 
@@ -322,6 +342,7 @@ def strike_water(r, T_grain, T_target):
 
     """
     return 0.2 / r * (float(T_target) - T_grain) + T_target
+
 
 def utilization(t, sg, whole=False):
     """Percent hop utilization, Tinseth method.

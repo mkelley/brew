@@ -247,4 +247,6 @@ class Refractometer(GravityMeasurement):
 
     def cor_grav(self, og):
         from .util import refractometer_correct
+        if og is None:
+            return '{:.3f}'.format(self.gravity)
         return '{:.3f}'.format(refractometer_correct(og, self.gravity))
