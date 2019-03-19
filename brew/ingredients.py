@@ -25,6 +25,7 @@ __all__ = [
     'Other',
     'Priming',
     'Water',
+    'WaterTreatment',
     'Ingredients',
 ]
 
@@ -122,6 +123,7 @@ class CultureBank(Enum):
     AmericanAleUS05 = ('US-05, American Ale', 81, 81)
     AmericanAle1056 = ('WY1056, American Ale', 73, 77)
     CaliforniaAle = ('WLP001, California Ale', 73, 80)
+    GermanAle = ('WLP029, GermanAle/Kölsch', 72, 78)
     CaliforniaAleV = ('WLP051, California Ale V', 70, 75)
     EnglishAle = ('WLP002, English Ale', 63, 70)
     IrishAle = ('WLP004, Irish Ale', 69, 74)
@@ -533,6 +535,10 @@ class Other(Ingredient):
 
 
 class Priming(Ingredient):
+    pass
+
+
+class WaterTreatment(Ingredient):
     pass
 
 

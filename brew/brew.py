@@ -370,8 +370,8 @@ Collect {:.1f} gal of wort
             format=_default_format)
         tab.colformats = ('{}', '{}', '{:.1f}', '{:.1f}', '{}', '{:.1f}',
                           '{:.0f}')
-        tab.footer = '''Pre-boil: {} gal at {:.3f}
-Post-boil: {} gal at {:.3f}, {:.0f} IBU
+        tab.footer = '''Pre-boil: {:.1f} gal at {:.3f}
+Post-boil: {:.1f} gal at {:.3f}, {:.0f} IBU
 '''.format(v_preboil, sg_preboil, v_postboil, sg_postboil, sum(bit))
         if self.hop_stand:
             tab.footer += '\nHop stand'

@@ -153,6 +153,27 @@ yaml.add_constructor('!Water', water_constructor)
 ########################################################################
 
 
+def water_treatment_representer(dumper, item):
+    data = {
+        'name': item.name,
+        'quantity': item.volume,
+        'timing': item.timing
+    }
+    return dumper.represent_mapping('!WaterTreatment', data)
+
+
+def water_treatment_constructor(loader, node):
+    data = loader.construct_mapping(node)
+    name = data.pop('name')
+    return ingredients.WaterTreatment(name, **data)
+
+
+yaml.add_representer(ingredients.WaterTreatment, water_treatment_representer)
+yaml.add_constructor('!WaterTreatment', water_treatment_constructor)
+
+########################################################################
+
+
 def timing_representer(name):
     def rep(dumper, item):
         time = getattr(item, 'time', None)
