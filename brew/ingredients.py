@@ -51,6 +51,7 @@ class PPG(Enum):
     AmericanRyeMalt = "American rye malt", 36
     GermanRyeMalt = "German rye malt", 38
     GermanPilsner = "German pilsner", 37
+    GermanSmokedMalt = "German smoked malt", 37
     EnglishRyeMalt = "English rye malt", 40
     EnglishOatMalt = "English oat malt", 35
     AmericanVienna = "American Vienna", 36
