@@ -22,6 +22,7 @@ __all__ = [
     'Fruit',
     'Grain',
     'Sugar',
+    'Wort',
     'Other',
     'Priming',
     'Water',
@@ -182,8 +183,12 @@ class Ingredient:
     """
 
     def __init__(self, name, quantity, timing=T.Unspecified(), desc=None):
-        assert isinstance(name, str)
-        assert isinstance(quantity, str)
+        if not isinstance(name, str):
+            raise TypeError('name')
+
+        if not isinstance(quantity, str):
+            raise TypeError('quantity')
+
         self.name = name
         self.quantity = quantity
         self.timing = timing
@@ -214,10 +219,18 @@ class Culture(Ingredient):
     """
 
     def __init__(self, culture, quantity='1', timing=T.Primary(), desc=None):
-        assert isinstance(culture, CultureBank)
-        assert isinstance(quantity, str)
-        assert isinstance(timing, T.Timing)
-        assert isinstance(desc, (str, type(None)))
+        if not isinstance(culture, CultureBank):
+            raise TypeError('culture')
+
+        if not isinstance(quantity, str):
+            raise TypeError('quantity')
+
+        if not isinstance(timing, T.Timing):
+            raise TypeError('timing')
+
+        if not isinstance(desc, (str, type(None))):
+            raise TypeError('desc')
+
         self.culture = culture
         self.quantity = quantity
         self.timing = timing
@@ -247,11 +260,20 @@ class Fermentable(Ingredient):
     """
 
     def __init__(self, ppg, weight, timing=T.Mash(), name=None, desc=None):
-        assert isinstance(ppg, (PPG, float, int))
-        assert isinstance(weight, (float, int))
-        assert isinstance(timing, T.Timing)
-        assert isinstance(name, (str, type(None)))
-        assert isinstance(desc, (str, type(None)))
+        if not isinstance(ppg, (PPG, float, int)):
+            raise TypeError('ppg')
+
+        if not isinstance(weight, (float, int)):
+            raise TypeError('weight')
+
+        if not isinstance(timing, T.Timing):
+            raise TypeError('timing')
+
+        if not isinstance(name, (str, type(None))):
+            raise TypeError('name')
+
+        if not isinstance(desc, (str, type(None))):
+            raise TypeError('desc')
 
         if isinstance(ppg, PPG):
             self.name, self.ppg = ppg.value
@@ -259,7 +281,8 @@ class Fermentable(Ingredient):
                 self.name = name
         else:
             self.ppg = int(ppg)
-            assert name is not None, '`name` is required when `ppg` is a float.'
+            if name is None:
+                raise ValueError('`name` is required when `ppg` is a float.')
             self.name = name
 
         self.weight = float(weight)
@@ -306,11 +329,20 @@ class Unfermentable(Ingredient):
     """
 
     def __init__(self, ppg, weight, timing=T.Mash(), name=None, desc=None):
-        assert isinstance(ppg, (PPG, float, int))
-        assert isinstance(weight, (float, int))
-        assert isinstance(timing, T.Timing)
-        assert isinstance(name, (str, type(None)))
-        assert isinstance(desc, (str, type(None)))
+        if not isinstance(ppg, (PPG, float, int)):
+            raise TypeError('ppg')
+
+        if not isinstance(weight, (float, int)):
+            raise TypeError('weight')
+
+        if not isinstance(timing, T.Timing):
+            raise TypeError('timing')
+
+        if not isinstance(name, (str, type(None))):
+            raise TypeError('name')
+
+        if not isinstance(desc, (str, type(None))):
+            raise TypeError('desc')
 
         if isinstance(ppg, PPG):
             self.name, self.ppg = ppg.value
@@ -318,7 +350,8 @@ class Unfermentable(Ingredient):
                 self.name = name
         else:
             ppg = int(ppg)
-            assert name is not None, '`name` is required when `ppg` is a float.'
+            if name is None:
+                raise ValueError('`name` is required when `ppg` is a float.')
             self.name = name
 
         self.weight = float(weight)
@@ -366,13 +399,26 @@ class Hop(Ingredient):
 
     def __init__(self, name, alpha, weight, timing=None, whole=False,
                  beta=None, desc=None):
-        assert isinstance(name, str)
-        assert isinstance(alpha, (float, int))
-        assert isinstance(weight, (float, int))
-        assert isinstance(timing, (T.Timing, type(None)))
-        assert isinstance(whole, bool)
-        assert isinstance(beta, (float, int, type(None)))
-        assert isinstance(desc, (str, type(None)))
+        if not isinstance(name, str):
+            raise TypeError('name')
+
+        if not isinstance(alpha, (float, int)):
+            raise TypeError('alpha')
+
+        if not isinstance(weight, (float, int)):
+            raise TypeError('weight')
+
+        if not isinstance(timing, (T.Timing, type(None))):
+            raise TypeError('timing')
+
+        if not isinstance(whole, bool):
+            raise TypeError('whole')
+
+        if not isinstance(beta, (float, int, type(None))):
+            raise TypeError('beta')
+
+        if not isinstance(desc, (str, type(None))):
+            raise TypeError('desc')
 
         self.name = name
         self.alpha = alpha
@@ -428,12 +474,16 @@ class Hop(Ingredient):
 
         from .util import ibu, utilization
 
-        assert isinstance(gravity, float)
-        assert isinstance(volume, (float, int))
+        if not isinstance(gravity, float):
+            raise TypeError('gravity')
+
+        if not isinstance(volume, (float, int)):
+            raise TypeError('volume')
 
         if isinstance(self.timing, (T.FirstWort, T.Mash)):
-            assert isinstance(
-                boil, (float, int)), 'Boil time is required for mash and first-wort hops.'
+            if not isinstance(boil, (float, int)):
+                raise ValueError(
+                    'Boil time is required for mash and first-wort hops.')
             t = boil + 5
         elif isinstance(self.timing, T.HopStand):
             t = 5
@@ -469,6 +519,38 @@ class Sugar(Fermentable):
                              desc=desc)
 
 
+class Wort(Fermentable):
+    """Wort."""
+
+    def __init__(self, sg, volume, timing=T.Boil(0), name=None, desc=None):
+        self.name = name
+        self.sg = float(sg)
+        self.volume = volume
+        self.timing = timing
+        self.desc = name if desc is None else desc
+
+    @property
+    def quantity(self):
+        return "{:.2f} gal".format(self.volume)
+
+    @property
+    def ppg(self):
+        ppg = (self.sg - 1.0) * 1000
+
+        # but PPG should be an integer, take care with rounding to keep accuracy
+        n, d = ppg.as_integer_ratio()
+        if d == 2:
+            ppg = (n + 1) // 2
+        else:
+            ppg = round(ppg)
+
+        return ppg
+
+    @property
+    def weight(self):
+        return 8 * self.sg / self.volume
+
+
 class Fruit(Fermentable):
     """Fermentable fruit forms.
 
@@ -494,12 +576,23 @@ class Fruit(Fermentable):
 
     def __init__(self, name, sg, weight, timing=T.Secondary(),
                  density=1.0, desc=None):
-        assert isinstance(name, str)
-        assert isinstance(sg, float)
-        assert isinstance(weight, (float, int))
-        assert isinstance(timing, T.Timing)
-        assert isinstance(density, (float, int))
-        assert isinstance(desc, (str, type(None)))
+        if not isinstance(name, str):
+            raise TypeError('name')
+
+        if not isinstance(sg, float):
+            raise TypeError('sg')
+
+        if not isinstance(weight, (float, int)):
+            raise TypeError('weight')
+
+        if not isinstance(timing, T.Timing):
+            raise TypeError('timing')
+
+        if not isinstance(density, (float, int)):
+            raise TypeError('density')
+
+        if not isinstance(desc, (str, type(None))):
+            raise TypeError('desc')
 
         self.name = name
         self.sg = float(sg)
@@ -559,10 +652,17 @@ class Water(Ingredient):
     """
 
     def __init__(self, name, volume=0, timing=T.Unspecified(), desc=None):
-        assert isinstance(name, str)
-        assert isinstance(volume, (float, int))
-        assert isinstance(timing, T.Timing)
-        assert isinstance(desc, (str, type(None)))
+        if not isinstance(name, str):
+            raise TypeError('name')
+
+        if not isinstance(volume, (float, int)):
+            raise TypeError('volume')
+
+        if not isinstance(timing, T.Timing):
+            raise TypeError('timing')
+
+        if not isinstance(desc, (str, type(None))):
+            raise TypeError('desc')
 
         self.name = name
         self.volume = float(volume)
@@ -589,7 +689,9 @@ class Ingredients(MutableSequence):
 
     def __init__(self, a=[]):
         from collections import Iterable
-        assert isinstance(a, Iterable)
+        if not isinstance(a, Iterable):
+            raise TypeError('ingredient list must be an iterable')
+
         self._list = list(a)
 
     def __contains__(self, value):
@@ -630,7 +732,9 @@ class Ingredients(MutableSequence):
         return reversed(self._list)
 
     def __setitem__(self, index, value):
-        assert isinstance(value, Ingredient)
+        if not isinstance(value, Ingredient):
+            raise TypeError('Must be an Ingredient')
+
         MutableSequence.__setitem__(self, index, value)
 
     def append(self, v):

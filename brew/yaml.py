@@ -105,6 +105,30 @@ for name in ['Fermentable', 'Grain', 'Sugar', 'Unfermentable']:
 ########################################################################
 
 
+def wort_representer(dumper, item):
+    data = {
+        'name': item.name,
+        'sg': item.sg,
+        'volume': item.weight,
+        'timing': item.timing,
+        'desc': item.desc,
+    }
+    return dumper.represent_mapping(name, data)
+
+
+def wort_constructor(loader, node):
+    data = loader.construct_mapping(node)
+    sg = data.pop('sg')
+    volume = data.pop('volume')
+    return ingredients.Wort(sg, volume, **data)
+
+
+yaml.add_representer(ingredients.Wort, wort_representer)
+yaml.add_constructor('!Wort', wort_constructor)
+
+########################################################################
+
+
 def fruit_representer(dumper, item):
     data = {
         'name': item.name,
