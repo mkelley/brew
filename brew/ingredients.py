@@ -165,6 +165,7 @@ class CultureBank(Enum):
     BottleDregs = ('Bottle dregs', 0, 100)
     Gnome = ('B45, Gnome', 72, 76,
              'http://www.imperialyeast.com/organic-yeast-strains/')
+    T58 = ('SafAle T-58', 70, 80)
 
 
 class Ingredient:
