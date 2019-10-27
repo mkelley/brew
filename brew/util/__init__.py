@@ -20,37 +20,25 @@ __all__ = [
     'ibu',
     'infusion_volume',
     'priming_sugar',
-    'real_attenutation',
-    'real_extract',
     'refractometer_correct',
     'sg2brix',
-    'sg2plato',
     'strike_water',
     'utilization',
 ]
+
+from .bbtn import calories_alcohol, calories_extract, calories_protein
 
 
 def abv(og, fg):
     """Alcohol by volume.
 
-    Brew by the Numbers, Hall, Zymergy, Summer 1995.
+    Novotný 2019, Revisiting ABV Calculations, Zymurgy.
 
-    """
-    return abw(og, fg) * fg / 0.794
-
-
-def abw(og, fg):
-    """Alcohol by weight.
-
-    Brew by the Numbers, Hall, Zymergy, Summer 1995.
+    Good to ±0.2%.
 
     """
 
-    from .util import sg2plato
-
-    oe = sg2plato(og)
-    re = real_extract(og, fg)
-    return (oe - re) / (2.0665 - 0.010665 * oe)
+    return 132.6 * (og - fg)
 
 
 def calories(og, fg):
@@ -58,36 +46,6 @@ def calories(og, fg):
     return (calories_alcohol(og, fg)
             + calories_extract(og, fg)
             + calories_protein(og, fg))
-
-
-def calories_alcohol(og, fg):
-    """Calories from alcohol per 12 oz.
-
-    Brew by the Numbers, Hall, Zymergy, Summer 1995.
-
-    """
-
-    return 25.2 * fg * abw(og, fg)
-
-
-def calories_extract(og, fg):
-    """Calories from residual sugars per 12 oz.
-
-    Brew by the Numbers, Hall, Zymergy, Summer 1995.
-
-    """
-
-    return 13.5 * fg * real_extract(og, fg)
-
-
-def calories_protein(og, fg):
-    """Calories from protein per 12 oz.
-
-    Brew by the Numbers, Hall, Zymergy, Summer 1995.
-
-    """
-
-    return 0.994 * fg * real_extract(og, fg)
 
 
 def carbohydrates(og, fg):
@@ -120,7 +78,7 @@ def final_gravity(sg, T_sacc, culture):
     """
 
     from collections import Iterable
-    from .ingredients import Culture
+    from ..ingredients import Culture
 
     assert isinstance(culture, (Culture, Iterable))
     if isinstance(culture, Culture):
@@ -233,35 +191,6 @@ def priming_sugar(T, r, v, fermentable='table sugar'):
     return scale * (0.5360 * v) * ((r - 3.0378) + (0.050 * T) - (0.0002655 * T**2))
 
 
-def real_attenuation(og, fg):
-    """Real attenuation (%) from original and final gravity.
-
-    Brew by the Numbers, Hall, Zymergy, Summer 1995.
-
-    """
-
-    from .util import sg2plato
-
-    oe = sg2plato(og)
-    re = real_extract(og, fg)
-    return (oe - re) / oe * 100.
-
-
-def real_extract(og, fg):
-    """Real extract (degrees Plato) from original and final gravity.
-
-    Brew by the Numbers, Hall, Zymergy, Summer 1995.
-
-    """
-
-    from .util import sg2plato
-
-    oe = sg2plato(og)
-    ae = sg2plato(fg)
-    q = 0.22 + 0.001 * oe
-    return (q * oe + ae) / (1 + q)
-
-
 def refractometer_correct(sg0, sg_r, wcf=1.0):
     """Correct final gravity measurment from refractometer.
 
@@ -292,40 +221,6 @@ def sg2brix(sg):
 
     """
     return ((182.461 * sg - 775.6821) * sg + 1262.7794) * sg - 669.5622
-
-
-def plato2sg(E):
-    """Degrees Plato to specific gravity.
-
-    Parmeters
-    ---------
-    E : float
-      Extract in degrees plato.
-
-    Notes
-    -----
-    Brew by the Numbers, Hall, Zymurgy, Summer 1995.
-
-    """
-    return (((4.3074e-8 * E) + 1.3488e-5) * E + 0.0038661) * E + 1.00001
-
-
-def sg2plato(sg):
-    """Extract in degrees Plato.
-
-    Valid for the range 0 to 33° Plato / 1.000 to 1.144.
-
-    Parmeters
-    ---------
-    sg : float
-      Specific gravity.
-
-    Notes
-    -----
-    Brew by the Numbers, Hall, Zymurgy, Summer 1995.
-
-    """
-    return -668.962 + 1262.45 * sg - 776.43 * sg**2 + 182.94 * sg**3
 
 
 def strike_water(r, T_grain, T_target):
