@@ -130,6 +130,7 @@ class CultureBank(Enum):
     EnglishAle = ('WLP002, English Ale', 63, 70)
     IrishAle = ('WLP004, Irish Ale', 69, 74)
     DryEnglishAle = ('WLP007, Dry English Ale', 70, 80)
+    EdinburghScottishAle = ('WLP028, Edinburgh Scottish Ale', 70, 75)
     Nottingham = ('Danstar Nottingham', 70, 80)  # guess
     FrenchAle = ('WLP072, French Ale', 68, 75)
     CreamAleBlend = ('WLP080, Cream Ale Blend', 75, 80)
